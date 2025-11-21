@@ -1,0 +1,59 @@
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-2xl font-bold mb-6">General Settings</h2>
+    <form action="/admin/config" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Home Title</label>
+                <input type="text" name="homeTitle" value="<%= config.homeTitle %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Home Subtitle</label>
+                <input type="text" name="homeSubtitle" value="<%= config.homeSubtitle %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-gray-700 font-medium mb-2">About Text</label>
+                <textarea name="aboutText" rows="4" class="w-full border border-gray-300 rounded px-4 py-2"><%= config.aboutText %></textarea>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Contact Email</label>
+                <input type="email" name="contactEmail" value="<%= config.contactEmail %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">Contact Phone</label>
+                <input type="text" name="contactPhone" value="<%= config.contactPhone %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+        </div>
+
+        <h3 class="text-lg font-bold mt-6 mb-4 border-b pb-2">Social Links</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2"><i class="fab fa-linkedin text-blue-600 mr-2"></i>LinkedIn</label>
+                <input type="text" name="linkedin" value="<%= config.linkedin %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2"><i class="fab fa-github text-gray-800 mr-2"></i>GitHub</label>
+                <input type="text" name="github" value="<%= config.github %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2"><i class="fab fa-twitter text-blue-400 mr-2"></i>Twitter</label>
+                <input type="text" name="twitter" value="<%= config.twitter %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-2"><i class="fab fa-instagram text-pink-600 mr-2"></i>Instagram</label>
+                <input type="text" name="instagram" value="<%= config.instagram %>" class="w-full border border-gray-300 rounded px-4 py-2">
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <label class="block text-gray-700 font-medium mb-2">About Image</label>
+            <input type="file" name="aboutImage" class="w-full border border-gray-300 rounded px-4 py-2">
+            <% if(config.aboutImage) { %>
+                <div class="mt-2">
+                    <img src="<%= config.aboutImage %>" height="100" class="rounded shadow max-h-32">
+                </div>
+            <% } %>
+        </div>
+
+        <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded hover:bg-blue-700 font-bold">Save Configuration</button>
+    </form>
+</div>

@@ -1,0 +1,44 @@
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Income Sources</h1>
+    <a href="/admin/finance/income/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i> Add Income
+    </a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Source</th>
+                    <th class="px-6 py-3">Category</th>
+                    <th class="px-6 py-3">Wallet</th>
+                    <th class="px-6 py-3">Amount</th>
+                    <th class="px-6 py-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <% income.forEach(i => { %>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-gray-500"><%= new Date(i.date).toLocaleDateString() %></td>
+                        <td class="px-6 py-4 font-medium text-gray-900"><%= i.source %></td>
+                        <td class="px-6 py-4">
+                            <% if(i.category) { %>
+                                <span class="px-2 py-1 rounded text-xs text-white" style="background-color: <%= i.category.color %>"><%= i.category.name %></span>
+                            <% } else { %>
+                                <span class="text-gray-400">-</span>
+                            <% } %>
+                        </td>
+                        <td class="px-6 py-4 text-gray-500"><%= i.wallet ? i.wallet.name : '-' %></td>
+                        <td class="px-6 py-4 font-bold text-green-600">+ Rs <%= i.amount.toLocaleString() %></td>
+                        <td class="px-6 py-4">
+                            <a href="/admin/finance/income/edit/<%= i._id %>" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></a>
+                            <a href="/admin/finance/income/delete/<%= i._id %>" class="text-red-600 hover:text-red-800" onclick="return confirm('Delete this income record?')"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>

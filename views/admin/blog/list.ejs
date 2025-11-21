@@ -1,0 +1,45 @@
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Blog Management</h1>
+    <a href="/admin/blog/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i> New Post
+    </a>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                    <th class="px-6 py-3">Title</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Views</th>
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <% posts.forEach(post => { %>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium text-gray-900"><%= post.title %></td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium <%= post.status === 'Published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                                <%= post.status %>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-gray-500"><%= post.views %></td>
+                        <td class="px-6 py-4 text-gray-500">
+                            <%= new Date(post.createdAt).toLocaleDateString() %>
+                        </td>
+                        <td class="px-6 py-4">
+                            <a href="/admin/blog/edit/<%= post._id %>" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></a>
+                            <a href="/admin/blog/delete/<%= post._id %>" class="text-red-600 hover:text-red-800" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i></a>
+                            <% if(post.status === 'Published') { %>
+                                <a href="/blog/post/<%= post.slug %>" target="_blank" class="text-gray-400 hover:text-gray-600 ml-3"><i class="fas fa-external-link-alt"></i></a>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>

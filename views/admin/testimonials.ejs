@@ -1,0 +1,62 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+        <h2 class="text-xl font-bold text-gray-800">Testimonials Management</h2>
+        <a href="/admin/testimonials/add" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-lg shadow-green-500/30 flex items-center">
+            <i class="fas fa-plus mr-2"></i> Add Testimonial
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                <tr>
+                    <th class="px-6 py-4">Client</th>
+                    <th class="px-6 py-4">Message</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                <% if(testimonials.length > 0) { %>
+                    <% testimonials.forEach(t => { %>
+                        <tr class="hover:bg-gray-50 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <% if(t.photoUrl) { %>
+                                        <img src="<%= t.photoUrl %>" alt="<%= t.name %>" class="w-10 h-10 rounded-full object-cover mr-3 shadow-sm">
+                                    <% } else { %>
+                                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 text-gray-600 font-bold">
+                                            <%= t.name.charAt(0) %>
+                                        </div>
+                                    <% } %>
+                                    <div>
+                                        <div class="font-medium text-gray-900"><%= t.name %></div>
+                                        <div class="text-sm text-gray-500"><%= t.position %></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="text-gray-600 text-sm italic truncate max-w-xs">"<%= t.message %>"</p>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a href="/admin/testimonials/<%= t._id %>/edit" class="text-blue-500 hover:text-blue-700 p-1 rounded-md hover:bg-blue-50 transition-colors" title="Edit">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form action="/admin/testimonials/<%= t._id %>/delete" method="POST" onsubmit="return confirm('Delete?');" class="inline">
+                                        <button type="submit" class="text-red-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="3" class="px-6 py-8 text-center text-gray-500">No testimonials found.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

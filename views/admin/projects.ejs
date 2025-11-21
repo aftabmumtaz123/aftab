@@ -1,0 +1,83 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+        <h2 class="text-xl font-bold text-gray-800">Projects Management</h2>
+        <a href="/admin/projects/add" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-lg shadow-green-500/30 flex items-center">
+            <i class="fas fa-plus mr-2"></i> Add Project
+        </a>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                <tr>
+                    <th class="px-6 py-4">Project Name</th>
+                    <th class="px-6 py-4">Tech Stack</th>
+                    <th class="px-6 py-4">Links</th>
+                    <th class="px-6 py-4">Clicks</th>
+                    <th class="px-6 py-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                <% if(projects.length > 0) { %>
+                    <% projects.forEach(project => { %>
+                        <tr class="hover:bg-gray-50 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <% if(project.imageUrl) { %>
+                                        <img src="<%= project.imageUrl %>" alt="<%= project.title %>" class="h-10 w-10 rounded-lg object-cover shadow-sm mr-3">
+                                    <% } else { %>
+                                        <div class="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 mr-3">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    <% } %>
+                                    <span class="font-medium text-gray-900"><%= project.title %></span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex flex-wrap gap-1">
+                                    <% project.tags.slice(0, 3).forEach(tag => { %>
+                                        <span class="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-md border border-blue-100"><%= tag %></span>
+                                    <% }) %>
+                                    <% if(project.tags.length > 3) { %>
+                                        <span class="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md border border-gray-100">+<%= project.tags.length - 3 %></span>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex space-x-3 text-gray-400">
+                                    <% if(project.liveLink) { %>
+                                        <a href="<%= project.liveLink %>" target="_blank" class="hover:text-blue-600 transition-colors" title="Live Link"><i class="fas fa-external-link-alt"></i></a>
+                                    <% } %>
+                                    <% if(project.repoLink) { %>
+                                        <a href="<%= project.repoLink %>" target="_blank" class="hover:text-gray-900 transition-colors" title="Repo Link"><i class="fab fa-github"></i></a>
+                                    <% } %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <%= project.clicks %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a href="/admin/projects/<%= project._id %>/edit" class="text-blue-500 hover:text-blue-700 p-1 rounded-md hover:bg-blue-50 transition-colors" title="Edit">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form action="/admin/projects/<%= project._id %>/delete" method="POST" onsubmit="return confirm('Delete project?');" class="inline">
+                                        <button type="submit" class="text-red-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">No projects found.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

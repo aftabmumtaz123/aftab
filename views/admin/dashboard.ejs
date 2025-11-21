@@ -1,0 +1,186 @@
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Projects</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-1"><%= stats.projectCount %></h3>
+            </div>
+            <div class="p-3 rounded-lg bg-blue-50 text-blue-600">
+                <i class="fas fa-project-diagram text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Skills</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-1"><%= stats.skillCount %></h3>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50 text-green-600">
+                <i class="fas fa-code text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Experience</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-1"><%= stats.experienceCount %></h3>
+            </div>
+            <div class="p-3 rounded-lg bg-purple-50 text-purple-600">
+                <i class="fas fa-briefcase text-xl"></i>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium">Total Views</p>
+                <h3 class="text-3xl font-bold text-gray-800 mt-1"><%= stats.views %></h3>
+            </div>
+            <div class="p-3 rounded-lg bg-yellow-50 text-yellow-600">
+                <i class="fas fa-eye text-xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 class="font-bold text-gray-800 text-lg mb-4">Content Overview</h3>
+        <canvas id="contentChart"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 class="font-bold text-gray-800 text-lg mb-4">Views Analysis</h3>
+        <div class="flex items-center justify-center h-64 text-gray-400 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+            <p>Historical view data coming soon...</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('contentChart').getContext('2d');
+    const contentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Projects', 'Skills', 'Experience', 'Testimonials'],
+            datasets: [{
+                data: [<%= stats.projectCount %>, <%= stats.skillCount %>, <%= stats.experienceCount %>, <%= stats.testimonialCount %>],
+                backgroundColor: [
+                    '#3b82f6', // Blue
+                    '#22c55e', // Green
+                    '#a855f7', // Purple
+                    '#f59e0b'  // Yellow
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+
+<div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Quick Actions</h2>
+    <div class="flex gap-4">
+        <a href="/admin/projects" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-500/30">Manage Projects</a>
+        <a href="/admin/skills" class="bg-green-600 text-white px-5 py-2.5 rounded-lg hover:bg-green-700 transition-colors font-medium shadow-lg shadow-green-500/30">Update Skills</a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Recent Projects -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="font-bold text-gray-800 text-lg">Recent Projects</h3>
+            <a href="/admin/projects" class="text-blue-600 text-sm hover:underline">View All</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                        <th class="px-6 py-3">Image</th>
+                        <th class="px-6 py-3">Title</th>
+                        <th class="px-6 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <% if(recentProjects.length > 0) { %>
+                        <% recentProjects.forEach(project => { %>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <% if(project.imageUrl) { %>
+                                        <img src="<%= project.imageUrl %>" alt="<%= project.title %>" class="h-10 w-10 rounded-lg object-cover shadow-sm">
+                                    <% } else { %>
+                                        <div class="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    <% } %>
+                                </td>
+                                <td class="px-6 py-4 font-medium text-gray-900"><%= project.title %></td>
+                                <td class="px-6 py-4">
+                                    <form action="/admin/projects/<%= project._id %>/delete" method="POST" class="inline" onsubmit="return confirm('Delete this project?');">
+                                        <button type="submit" class="text-red-500 hover:text-red-700 transition-colors"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="3" class="px-6 py-8 text-center text-gray-500">No projects found.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Skills -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="font-bold text-gray-800 text-lg">Skills</h3>
+            <a href="/admin/skills" class="text-blue-600 text-sm hover:underline">View All</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                        <th class="px-6 py-3">Icon</th>
+                        <th class="px-6 py-3">Name</th>
+                        <th class="px-6 py-3">Level</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <% if(recentSkills.length > 0) { %>
+                        <% recentSkills.forEach(skill => { %>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 text-2xl text-blue-600">
+                                    <i class="<%= skill.icon %>"></i>
+                                </td>
+                                <td class="px-6 py-4 font-medium text-gray-900"><%= skill.name %></td>
+                                <td class="px-6 py-4">
+                                    <div class="w-24 bg-gray-100 rounded-full h-1.5">
+                                        <div class="bg-blue-600 h-1.5 rounded-full" style="width: <%= skill.level %>%;"></div>
+                                    </div>
+                                    <span class="text-xs text-gray-500 mt-1 block"><%= skill.level %>%</span>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="3" class="px-6 py-8 text-center text-gray-500">No skills found.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

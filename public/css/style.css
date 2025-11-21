@@ -1,0 +1,190 @@
+/* Reset & Base */
+:root {
+    --bg-dark: #050505;
+    --bg-panel: #0a0a0f;
+    --text-main: #e0e0e0;
+    --text-muted: #888888;
+    --neon-cyan: #00f3ff;
+    --neon-pink: #ff00ff;
+    --neon-purple: #bc13fe;
+    --glass-border: 1px solid rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+    background-image:
+        linear-gradient(rgba(5, 5, 5, 0.9), rgba(5, 5, 5, 0.9)),
+        url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop');
+    /* Cyberpunk bg texture */
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+/* Typography & Glitch Effect */
+h1,
+h2,
+h3 {
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    position: relative;
+    display: inline-block;
+    text-shadow: 3px 3px 0px var(--neon-purple), -3px -3px 0px var(--neon-cyan);
+}
+
+h2 {
+    font-size: 2.5rem;
+    margin-top: 4rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--neon-cyan);
+    display: inline-block;
+    padding-bottom: 10px;
+    box-shadow: 0 10px 20px -10px var(--neon-cyan);
+}
+
+/* Layout */
+header {
+    text-align: center;
+    padding: 100px 20px;
+    position: relative;
+}
+
+header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: var(--neon-pink);
+    box-shadow: 0 0 20px var(--neon-pink);
+}
+
+main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 40px 100px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 40px;
+}
+
+/* Cyberpunk Card */
+.card {
+    background: var(--bg-panel);
+    border: 1px solid var(--neon-purple);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(188, 19, 254, 0.2);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent 40%, rgba(188, 19, 254, 0.1) 45%, transparent 50%);
+    transform: translateX(-100%);
+    transition: 0.5s;
+}
+
+.card:hover::before {
+    transform: translateX(100%);
+}
+
+.card:hover {
+    .card-content {
+        padding: 25px;
+    }
+
+    .card h3 {
+        color: var(--neon-cyan);
+        font-size: 1.8rem;
+        margin-bottom: 15px;
+        text-shadow: none;
+    }
+
+    .card p {
+        font-size: 1rem;
+        margin-bottom: 20px;
+        color: #ccc;
+    }
+
+    /* Tags */
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .tag {
+        background: rgba(0, 243, 255, 0.1);
+        color: var(--neon-cyan);
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        border: 1px solid var(--neon-cyan);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Buttons */
+    .btn {
+        display: block;
+        width: 100%;
+        padding: 15px;
+        background: transparent;
+        color: var(--neon-pink);
+        text-decoration: none;
+        text-align: center;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border: 2px solid var(--neon-pink);
+        position: relative;
+        overflow: hidden;
+        transition: 0.3s;
+    }
+
+    .btn:hover {
+        background: var(--neon-pink);
+        color: white;
+        box-shadow: 0 0 20px var(--neon-pink);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        .grid {
+            grid-template-columns: 1fr;
+        }
+    }

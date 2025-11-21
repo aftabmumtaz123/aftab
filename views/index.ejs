@@ -1,0 +1,111 @@
+<!-- Hero Section -->
+<section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Left Content -->
+            <div>
+                <p class="text-xl text-gray-400 font-medium mb-4">Hello, I'm <%= hero.title.split(' ')[0] %>,</p>
+                <h1 class="text-6xl lg:text-8xl font-extrabold text-white tracking-tight leading-none mb-6">
+                    <%= hero.subtitle || 'Full stack Developer' %>
+                </h1>
+                <div class="mt-8">
+                    <a href="/contact" class="text-white text-lg font-bold border-b-2 border-white pb-1 hover:text-gray-300 hover:border-gray-300 transition-colors">
+                        Contact Me
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Image -->
+            <div class="relative flex justify-center lg:justify-end">
+                <div class="w-full max-w-md aspect-square rounded-[3rem] overflow-hidden bg-gray-800 relative">
+                    <% if(hero.backgroundImage) { %>
+                        <img src="<%= hero.backgroundImage %>" alt="Hero" class="w-full h-full object-cover">
+                    <% } else { %>
+                        <div class="w-full h-full flex items-center justify-center bg-gray-700 text-gray-500">
+                            <i class="fas fa-user text-6xl"></i>
+                        </div>
+                    <% } %>
+                    <!-- Gradient Overlay -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent opacity-20"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="py-20" id="about">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Heading with Line -->
+        <div class="flex items-center mb-12">
+            <h2 class="text-5xl font-extrabold text-gray-400 mr-8">about</h2>
+            <div class="h-1 bg-gray-700 flex-grow rounded-full"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div class="lg:col-span-8 lg:col-start-3">
+                <p class="text-xl text-gray-400 leading-relaxed mb-16 text-center lg:text-left">
+                    <%= config.aboutText || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Amet vulputate tristique quam felis. Id phasellus dui orci vulputate consequat nulla proin. Id sit scelerisque neque, proin bibendum diam." %>
+                </p>
+
+                <!-- Stats / Skills Columns -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center lg:text-left">
+                    <!-- Stat 1 -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Front-End</h3>
+                        <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">60+ Hours Experience</p>
+                    </div>
+                    <!-- Stat 2 -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Python</h3>
+                        <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">4 Years Experience</p>
+                    </div>
+                    <!-- Stat 3 -->
+                    <div>
+                        <h3 class="text-2xl font-bold text-white mb-2">Machine Learning</h3>
+                        <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">120+ Hours Experience</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Projects (Styled for Dark Theme) -->
+<section class="py-20 bg-[#111]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center mb-12">
+            <h2 class="text-5xl font-extrabold text-gray-400 mr-8">work</h2>
+            <div class="h-1 bg-gray-700 flex-grow rounded-full"></div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <% projects.forEach(project => { %>
+                <div class="bg-[#1a1a1a] rounded-2xl overflow-hidden group hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="relative h-64 overflow-hidden">
+                        <img src="<%= project.imageUrl %>" alt="<%= project.title %>" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <a href="/track/<%= project._id %>" target="_blank" class="px-6 py-3 bg-white text-black rounded-full font-bold transform translate-y-4 group-hover:translate-y-0 transition-transform">View Project</a>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2"><%= project.title %></h3>
+                        <p class="text-gray-400 text-sm line-clamp-2 mb-4"><%= project.description %></p>
+                        <div class="flex flex-wrap gap-2">
+                            <% if(project.tags && project.tags.length > 0) { %>
+                                <% project.tags.forEach(tag => { %>
+                                    <span class="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded"><%= tag %></span>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+        
+        <div class="mt-12 text-center">
+            <a href="/projects" class="text-white border-b border-white pb-1 hover:text-gray-300 hover:border-gray-300 transition-colors">View All Projects</a>
+        </div>
+    </div>
+</section>

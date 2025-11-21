@@ -1,0 +1,43 @@
+<div class="bg-gray-50 dark:bg-gray-900 py-12 transition-colors duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl">My Projects</h1>
+            <p class="mt-4 text-xl text-gray-500 dark:text-gray-400">A collection of my work and experiments.</p>
+        </div>
+
+        <!-- Filter (Optional/Future) -->
+        <!-- <div class="flex justify-center space-x-4 mb-12">...</div> -->
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <% projects.forEach(project => { %>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col border border-gray-100 dark:border-gray-700">
+                    <div class="relative h-56 overflow-hidden flex-shrink-0">
+                        <img src="<%= project.imageUrl %>" alt="<%= project.title %>" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                            <a href="/track/<%= project._id %>" target="_blank" class="bg-white text-gray-900 px-6 py-2 rounded-full font-bold transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">View Project</a>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2"><%= project.title %></h3>
+                        <p class="text-gray-600 dark:text-gray-300 text-sm mb-4 flex-grow"><%= project.description %></p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <% if(project.tags && project.tags.length > 0) { %>
+                                <% project.tags.forEach(tag => { %>
+                                    <span class="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded"><%= tag %></span>
+                                <% }) %>
+                            <% } %>
+                        </div>
+
+                        <div class="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <% if(project.repoLink) { %>
+                                <a href="<%= project.repoLink %>" target="_blank" class="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white text-sm flex items-center"><i class="fab fa-github mr-2"></i> Source Code</a>
+                            <% } %>
+                            <a href="/track/<%= project._id %>" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">Live Demo <i class="fas fa-external-link-alt ml-2"></i></a>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,35 @@
+<div class="bg-white dark:bg-gray-900 min-h-screen py-12 transition-colors duration-300">
+    <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <div class="flex justify-center gap-2 mb-6">
+                <% post.tags.forEach(tag => { %>
+                    <span class="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm font-medium rounded-full">#<%= tag %></span>
+                <% }) %>
+            </div>
+            <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-6 leading-tight"><%= post.title %></h1>
+            <div class="flex items-center justify-center text-gray-500 dark:text-gray-400 text-sm">
+                <span><i class="far fa-calendar-alt mr-2"></i><%= new Date(post.publishedAt).toLocaleDateString() %></span>
+                <span class="mx-3">•</span>
+                <span><i class="far fa-eye mr-2"></i><%= post.views %> views</span>
+            </div>
+        </header>
+
+        <!-- Cover Image -->
+        <div class="rounded-2xl overflow-hidden shadow-lg mb-12">
+            <img src="<%= post.coverImage %>" alt="<%= post.title %>" class="w-full h-auto object-cover">
+        </div>
+
+        <!-- Content -->
+        <div class="prose prose-lg prose-blue dark:prose-invert mx-auto">
+            <%- post.content %>
+        </div>
+
+        <!-- Back Link -->
+        <div class="mt-16 pt-8 border-t border-gray-100 dark:border-gray-800 text-center">
+            <a href="/blog" class="inline-flex items-center text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Blog
+            </a>
+        </div>
+    </article>
+</div>

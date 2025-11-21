@@ -1,0 +1,71 @@
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <a href="/admin/testimonials" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-gray-800">Add Testimonial</h1>
+            </div>
+            <p class="text-gray-500 text-sm ml-7">Add a new client testimonial</p>
+        </div>
+    </div>
+
+    <form action="/admin/testimonials" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Main Info -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-quote-left text-blue-500"></i> Testimonial Details
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Client Name <span class="text-red-500">*</span></label>
+                            <input type="text" name="name" required class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. John Doe">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Position/Role <span class="text-red-500">*</span></label>
+                            <input type="text" name="position" required class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. CEO at TechCorp">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Message <span class="text-red-500">*</span></label>
+                        <textarea name="message" required rows="4" class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="What did they say about your work?"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Photo & Actions -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Photo Upload Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-circle text-purple-500"></i> Client Photo
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors relative">
+                        <input type="file" name="photo" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                        <div class="text-gray-400">
+                            <i class="fas fa-camera text-3xl mb-2"></i>
+                            <p class="text-sm font-medium">Upload Photo</p>
+                            <p class="text-xs">Optional</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Actions</h2>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-500/30">
+                    <i class="fas fa-plus"></i> Add Testimonial
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume - <%= config.homeTitle %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+        }
+        @page {
+            size: A4;
+            margin: 0;
+        }
+        .squircle {
+            border-radius: 20%;
+        }
+        /* Custom Teal Color from Image */
+        .text-teal-custom { color: #004d40; }
+        .bg-teal-custom { background-color: #004d40; }
+        .border-teal-custom { border-color: #004d40; }
+    </style>
+</head>
+<body class="bg-gray-100 print:bg-white min-h-screen flex justify-center py-10 print:py-0">
+
+    <!-- A4 Container -->
+    <div class="bg-white w-[210mm] min-h-[297mm] shadow-2xl print:shadow-none p-12 relative overflow-hidden">
+        
+        <!-- Decorative Elements -->
+        <div class="absolute top-10 left-0 w-4 h-16 bg-teal-500 rounded-r-lg"></div>
+        <div class="absolute top-24 left-0 w-4 h-16 bg-teal-300 rounded-r-lg"></div>
+
+        <!-- Header Section -->
+        <div class="flex items-start justify-between mb-16 relative z-10">
+            <!-- Profile Image -->
+            <div class="flex-shrink-0 mr-8">
+                <div class="w-40 h-40 rounded-3xl overflow-hidden border-4 border-gray-800 shadow-lg">
+                    <% if(config.aboutImage) { %>
+                        <img src="<%= config.aboutImage %>" alt="Profile" class="w-full h-full object-cover">
+                    <% } else { %>
+                        <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">No Image</div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Name and Title -->
+            <div class="flex-grow pt-4">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-5xl font-bold text-gray-900 tracking-tight mb-2 uppercase"><%= config.homeTitle %></h1>
+                        <p class="text-xl text-gray-600 font-medium"><%= hero.subtitle || 'Professional' %></p>
+                    </div>
+                    <!-- Email Top Right -->
+                    <div class="flex items-center text-gray-500 text-sm mt-2">
+                        <i class="fas fa-envelope mr-2 text-teal-700"></i>
+                        <%= config.contactEmail %>
+                    </div>
+                </div>
+                
+                <!-- Teal Bar -->
+                <div class="w-full h-4 bg-teal-800 rounded-l-full mt-6 ml-12 relative shadow-sm"></div>
+            </div>
+        </div>
+
+        <!-- Main Title -->
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-800"><%= hero.subtitle || 'Professional' %> Resume</h2>
+        </div>
+
+        <!-- Content -->
+        <div class="space-y-10">
+            
+            <!-- I. Objective -->
+            <section>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-center">
+                    <span class="mr-2">I.</span> Objective
+                </h3>
+                <div class="text-gray-600 leading-relaxed text-justify">
+                    <p><%= hero.description || config.aboutText %></p>
+                </div>
+                <div class="border-b border-gray-100 mt-6"></div>
+            </section>
+
+            <!-- II. Experience -->
+            <section>
+                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                    <span class="mr-2">II.</span> Experience
+                </h3>
+                <div class="space-y-8">
+                    <% experience.forEach(exp => { %>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-lg"><%= exp.role %></h4>
+                            <div class="flex justify-between items-baseline mb-2">
+                                <span class="font-bold text-gray-600">[<%= exp.company %>]</span>
+                                <span class="text-sm text-gray-500 font-medium">
+                                    [<%= new Date(exp.startDate).getFullYear() %> - <%= exp.current ? 'Present' : (exp.endDate ? new Date(exp.endDate).getFullYear() : 'Present') %>]
+                                </span>
+                            </div>
+                            <p class="text-gray-600 text-sm leading-relaxed">
+                                • <%= exp.description %>
+                            </p>
+                        </div>
+                    <% }) %>
+                </div>
+                <div class="border-b border-gray-100 mt-8"></div>
+            </section>
+
+            <!-- III. Skills (Replacing Education if empty, or adding as III) -->
+            <section>
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                    <span class="mr-2">III.</span> Skills & Expertise
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <% skills.forEach(skill => { %>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 bg-teal-600 rounded-full mr-3"></span>
+                            <span class="text-gray-700 font-medium"><%= skill.name %></span>
+                        </div>
+                    <% }) %>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Footer Decoration -->
+        <div class="absolute bottom-0 right-0 w-32 h-32 bg-teal-50 rounded-tl-full -z-10"></div>
+    </div>
+
+    <!-- Print Button (Hidden when printing) -->
+    <div class="fixed bottom-8 right-8 print:hidden">
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-all flex items-center">
+            <i class="fas fa-print mr-3"></i> Print / Save as PDF
+        </button>
+    </div>
+
+</body>
+</html>

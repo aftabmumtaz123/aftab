@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> | Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-900">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0 hidden md:flex flex-col shadow-sm z-10">
+            <div class="p-6 flex items-center justify-center border-b border-gray-100">
+                <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Admin<span class="text-blue-600">Panel</span></h1>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-6">
+                <ul class="space-y-1 px-4">
+                    <li>
+                        <a href="/admin/dashboard" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/dashboard' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-tachometer-alt w-6 text-center <%= path === '/dashboard' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/hero" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/hero' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-image w-6 text-center <%= path === '/hero' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Hero Section</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/skills" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/skills' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-code w-6 text-center <%= path === '/skills' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Skills</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/experience" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/experience' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-briefcase w-6 text-center <%= path === '/experience' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Experience</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/projects" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/projects' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-project-diagram w-6 text-center <%= path === '/projects' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Projects</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/testimonials" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/testimonials' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-comment-alt w-6 text-center <%= path === '/testimonials' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Testimonials</span>
+                        </a>
+                    </li>
+
+                    <!-- Finance Section -->
+                    <div class="pt-4 pb-2">
+                        <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Finance</p>
+                    </div>
+                    <li>
+                        <a href="/admin/finance" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.startsWith('/admin/finance') && path === '/admin/finance' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-chart-pie w-6 text-center <%= path && path.startsWith('/admin/finance') && path === '/admin/finance' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Overview</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/wallets" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/wallets') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-wallet w-6 text-center <%= path && path.includes('/finance/wallets') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Wallets</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/categories" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/categories') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-tags w-6 text-center <%= path && path.includes('/finance/categories') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Categories</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/income" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/income') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-money-bill-wave w-6 text-center <%= path && path.includes('/finance/income') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Income</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/expenses" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/expenses') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-receipt w-6 text-center <%= path && path.includes('/finance/expenses') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Expenses</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/payments" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/payments') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-exchange-alt w-6 text-center <%= path && path.includes('/finance/payments') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Payments</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/people" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/people') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-users w-6 text-center <%= path && path.includes('/finance/people') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">People</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/finance/reports" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/finance/reports') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-file-invoice-dollar w-6 text-center <%= path && path.includes('/finance/reports') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Reports</span>
+                        </a>
+                    </li>
+
+                    <div class="pt-4 pb-2">
+                        <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Content</p>
+                    </div>
+                    <li>
+                        <a href="/admin/blog" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path && path.includes('/admin/blog') ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-pen-nib w-6 text-center <%= path && path.includes('/admin/blog') ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Blog</span>
+                        </a>
+                    </li>
+
+                    <div class="pt-4 pb-2">
+                        <p class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">System</p>
+                    </div>
+                    <li>
+                        <a href="/admin/config" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/config' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-cog w-6 text-center <%= path === '/config' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/" class="flex items-center p-3 rounded-xl transition-all duration-200 group hover:bg-gray-50 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-external-link-alt w-6 text-center text-gray-400 group-hover:text-gray-600"></i>
+                            <span class="ml-3 font-medium">See Website</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="p-4 border-t border-gray-100">
+                <a href="/auth/logout" class="flex items-center p-3 rounded-xl hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors group">
+                    <i class="fas fa-sign-out-alt w-6 text-center group-hover:text-red-600 transition-colors"></i>
+                    <span class="ml-3 font-medium">Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-white shadow-sm p-4 flex justify-between items-center z-20">
+                <h1 class="text-xl font-bold text-gray-800">Admin Panel</h1>
+                <button id="mobile-menu-btn" class="text-gray-600 focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </header>
+
+            <!-- Content Scrollable Area -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 md:p-8">
+                <%- body %>
+            </main>
+        </div>
+    </div>
+
+    <script src="/js/idb-utility.js"></script>
+    <script src="/js/offline-sync.js"></script>
+    <script src="/js/toast.js"></script>
+    <script>
+        // Simple mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.querySelector('aside');
+        
+        if(mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('hidden');
+                sidebar.classList.toggle('fixed');
+                sidebar.classList.toggle('inset-0');
+                sidebar.classList.toggle('z-50');
+            });
+        }
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

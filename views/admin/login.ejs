@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="login-container" style="max-width: 400px; margin: 100px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+        <h2>Admin Login</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
+            </div>
+            <button type="submit" style="width: 100%; padding: 10px; background: #333; color: white; border: none; cursor: pointer;">Login</button>
+            <p id="error" style="color: red; display: none;"></p>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const errorDisplay = document.getElementById('error');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDisplay.style.display = 'none';
+
+            const username = form.username.value;
+            const password = form.password.value;
+
+            try {
+                const res = await fetch('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.user) {
+                    location.assign('/admin/dashboard');
+                } else {
+                    errorDisplay.textContent = data.error || 'Login failed';
+                    errorDisplay.style.display = 'block';
+                }
+            } catch (err) {
+                errorDisplay.textContent = 'An error occurred';
+                errorDisplay.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-800">Financial Reports</h1>
+    <p class="text-gray-500">Analyze your expenses and cash flow.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Monthly Expenses Chart -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4">Monthly Expenses</h3>
+        <canvas id="monthlyChart"></canvas>
+    </div>
+
+    <!-- Category Breakdown Chart -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4">Expense Categories</h3>
+        <canvas id="categoryChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Monthly Data
+    const monthlyData = <%- JSON.stringify(monthlyExpenses) %>;
+    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyChart = new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: monthlyData.map(m => `Month ${m._id}`),
+            datasets: [{
+                label: 'Expenses',
+                data: monthlyData.map(m => m.total),
+                backgroundColor: '#3b82f6',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Category Data
+    const categoryData = <%- JSON.stringify(categoryExpenses) %>;
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryData.map(c => c._id),
+            datasets: [{
+                data: categoryData.map(c => c.total),
+                backgroundColor: [
+                    '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#64748b'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>

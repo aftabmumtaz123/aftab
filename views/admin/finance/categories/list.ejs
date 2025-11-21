@@ -1,0 +1,50 @@
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Categories Manager</h1>
+    <a href="/admin/finance/categories/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i> Add Category
+    </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Expense Categories -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-red-50 px-6 py-4 border-b border-red-100">
+            <h3 class="font-bold text-red-800">Expense Categories</h3>
+        </div>
+        <div class="divide-y divide-gray-100">
+            <% categories.filter(c => c.type === 'expense').forEach(c => { %>
+                <div class="px-6 py-4 flex justify-between items-center hover:bg-gray-50">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 rounded-full mr-3" style="background-color: <%= c.color %>"></span>
+                        <span class="font-medium text-gray-700"><%= c.name %></span>
+                    </div>
+                    <div class="flex space-x-3">
+                        <a href="/admin/finance/categories/edit/<%= c._id %>" class="text-gray-400 hover:text-blue-600"><i class="fas fa-edit"></i></a>
+                        <a href="/admin/finance/categories/delete/<%= c._id %>" class="text-gray-400 hover:text-red-600" onclick="return confirm('Delete this category?')"><i class="fas fa-trash"></i></a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Income Categories -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-green-50 px-6 py-4 border-b border-green-100">
+            <h3 class="font-bold text-green-800">Income Categories</h3>
+        </div>
+        <div class="divide-y divide-gray-100">
+            <% categories.filter(c => c.type === 'income').forEach(c => { %>
+                <div class="px-6 py-4 flex justify-between items-center hover:bg-gray-50">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 rounded-full mr-3" style="background-color: <%= c.color %>"></span>
+                        <span class="font-medium text-gray-700"><%= c.name %></span>
+                    </div>
+                    <div class="flex space-x-3">
+                        <a href="/admin/finance/categories/edit/<%= c._id %>" class="text-gray-400 hover:text-blue-600"><i class="fas fa-edit"></i></a>
+                        <a href="/admin/finance/categories/delete/<%= c._id %>" class="text-gray-400 hover:text-red-600" onclick="return confirm('Delete this category?')"><i class="fas fa-trash"></i></a>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</div>

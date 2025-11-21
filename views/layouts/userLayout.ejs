@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        /* body { font-family: 'Outfit', sans-serif; } Removed as configured in tailwind */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .glass-nav {
+            background: rgba(17, 24, 39, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .clip-path-slant {
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+        }
+        @media (min-width: 1024px) {
+            .clip-path-slant {
+                clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <script>
+        // Check for dark mode preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+</head>
+<body class="bg-[#1a1a1a] text-gray-100 flex flex-col min-h-screen font-sans antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 transition-all duration-300 bg-[#111] border-b border-white/10 text-white" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-24">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/" class="text-2xl font-bold tracking-tight text-white">
+                        <%= config.homeTitle || 'Portfolio' %>
+                    </a>
+                </div>
+
+                <!-- Centered Links (Desktop) -->
+                <div class="hidden md:flex items-center space-x-12">
+                    <a href="/" class="text-gray-300 hover:text-white font-medium transition-colors text-base">Home</a>
+                    <a href="#about" class="text-gray-300 hover:text-white font-medium transition-colors text-base">About</a>
+                    <a href="/projects" class="text-gray-300 hover:text-white font-medium transition-colors text-base">Work</a>
+                    <a href="/contact" class="text-gray-300 hover:text-white font-medium transition-colors text-base">Contact</a>
+                </div>
+
+                <!-- Right Icons (Desktop) -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <% if(config.github) { %>
+                        <a href="<%= config.github %>" target="_blank" class="text-white hover:text-gray-300 transition-colors">
+                            <i class="fab fa-github text-3xl"></i>
+                        </a>
+                    <% } %>
+                    <a href="/resume" class="px-5 py-2 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-colors text-sm">
+                        Resume
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-white hover:text-gray-300 focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu (Hidden by default) -->
+        <div class="hidden md:hidden bg-[#111] border-t border-white/10" id="mobile-menu">
+            <div class="px-4 pt-4 pb-6 space-y-2">
+                <a href="/" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Home</a>
+                <a href="#about" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">About</a>
+                <a href="/projects" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Work</a>
+                <a href="/contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Contact</a>
+                <a href="/resume" class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-white/10">Resume</a>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <main class="flex-grow fade-in pt-24">
+        <%- body %>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-100 pt-16 pb-8 dark:bg-gray-900 dark:border-gray-800 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+                <div>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white"><%= config.homeTitle %></h3>
+                    <p class="text-gray-500 leading-relaxed dark:text-gray-400"><%= config.homeSubtitle %></p>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 dark:text-gray-200">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="/" class="text-gray-500 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:text-blue-400">Home</a></li>
+                        <li><a href="/projects" class="text-gray-500 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:text-blue-400">Projects</a></li>
+                        <li><a href="/resume" class="text-gray-500 hover:text-blue-600 transition-colors dark:text-gray-400 dark:hover:text-blue-400">Resume</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 dark:text-gray-200">Connect</h4>
+                    <div class="flex space-x-4">
+                        <% if(config.github) { %>
+                            <a href="<%= config.github %>" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition-all dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-600 dark:hover:text-white"><i class="fab fa-github"></i></a>
+                        <% } %>
+                        <% if(config.linkedin) { %>
+                            <a href="<%= config.linkedin %>" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition-all dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-600 dark:hover:text-white"><i class="fab fa-linkedin-in"></i></a>
+                        <% } %>
+                        <% if(config.twitter) { %>
+                            <a href="<%= config.twitter %>" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition-all dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-600 dark:hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <% } %>
+                        <% if(config.instagram) { %>
+                            <a href="<%= config.instagram %>" target="_blank" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition-all dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-600 dark:hover:text-white"><i class="fab fa-instagram"></i></a>
+                        <% } %>
+                        <% if(config.instagram) { %>
+                            <a href="/admin/dashboard" class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white transition-all dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-blue-600 dark:hover:text-white"><i class="fab fa-code"></i></a>
+                        <% } %>
+                    </div>
+                    <p class="mt-4 text-gray-500 text-sm dark:text-gray-400"><%= config.contactEmail %></p>
+                </div>
+            </div>
+            <div class="border-t border-gray-100 pt-8 text-center text-gray-400 text-sm dark:border-gray-800">
+                &copy; <%= new Date().getFullYear() %> <%= config.homeTitle %>. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/idb-utility.js"></script>
+    <script>
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+
+        // Dark Mode Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleMobileBtn = document.getElementById('theme-toggle-mobile');
+        
+        const toggleTheme = () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            }
+        };
+
+        if(themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
+        if(themeToggleMobileBtn) themeToggleMobileBtn.addEventListener('click', toggleTheme);
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

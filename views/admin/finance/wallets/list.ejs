@@ -1,0 +1,60 @@
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Wallets & Accounts</h1>
+    <a href="/admin/finance/wallets/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <i class="fas fa-plus mr-2"></i> Add Wallet
+    </a>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+    <% wallets.forEach(w => { %>
+        <!-- Wallet Card -->
+        <div class="w-full aspect-[1.586/1] rounded-3xl p-6 text-white relative overflow-hidden shadow-xl transform hover:-translate-y-1 transition-all duration-300 group" 
+             style="background: linear-gradient(135deg, <%= w.color || '#3b82f6' %> 0%, <%= w.color ? w.color + 'dd' : '#1d4ed8' %> 100%);">
+            
+            <!-- Edit/Delete Actions (Hidden by default, shown on hover) -->
+            <div class="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2">
+                <a href="/admin/finance/wallets/edit/<%= w._id %>" class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white hover:text-blue-600 transition-colors">
+                    <i class="fas fa-edit text-xs"></i>
+                </a>
+                <a href="/admin/finance/wallets/delete/<%= w._id %>" class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white hover:text-red-600 transition-colors" onclick="return confirm('Delete this wallet?')">
+                    <i class="fas fa-trash text-xs"></i>
+                </a>
+            </div>
+
+            <!-- Background Pattern -->
+            <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
+            
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="flex justify-between items-start">
+                    <div class="flex flex-col">
+                        <span class="text-white/80 text-xs font-medium tracking-wider uppercase"><%= w.type %></span>
+                        <h4 class="font-bold text-xl tracking-wide"><%= w.name %></h4>
+                    </div>
+                    <i class="fas fa-wifi text-white/50 rotate-90 text-xl"></i>
+                </div>
+
+                <div class="flex items-center gap-3 my-2">
+                    <div class="w-12 h-9 bg-yellow-200/80 rounded-md flex items-center justify-center overflow-hidden relative shadow-sm">
+                        <div class="absolute w-full h-[1px] bg-black/20 top-1/3"></div>
+                        <div class="absolute w-full h-[1px] bg-black/20 bottom-1/3"></div>
+                        <div class="absolute h-full w-[1px] bg-black/20 left-1/3"></div>
+                        <div class="absolute h-full w-[1px] bg-black/20 right-1/3"></div>
+                    </div>
+                    <i class="fas fa-rss text-2xl text-white/80 rotate-90"></i>
+                </div>
+
+                <div>
+                    <p class="text-sm text-white/80 mb-2 font-mono tracking-widest">**** **** **** <%= w._id.toString().slice(-4) %></p>
+                    <div class="flex justify-between items-end">
+                        <h3 class="text-3xl font-bold tracking-tight shadow-black drop-shadow-md"><%= w.currency %> <%= w.balance.toLocaleString() %></h3>
+                        <div class="flex flex-col items-end">
+                            <span class="text-[10px] text-white/60 uppercase">Valid Thru</span>
+                            <span class="text-xs font-mono">12/28</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+</div>

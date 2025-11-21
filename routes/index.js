@@ -1,0 +1,165 @@
+const express = require('express');
+const router = express.Router();
+const SiteConfig = require('../models/SiteConfig');
+const Service = require('../models/Service');
+const Project = require('../models/Project');
+const Skill = require('../models/Skill');
+const Experience = require('../models/Experience');
+const Testimonial = require('../models/Testimonial');
+const HeroSection = require('../models/HeroSection');
+
+// Helper to render with user layout
+const renderUser = (res, view, data) => {
+    res.render(view, { layout: 'layouts/userLayout', ...data });
+};
+
+// Home Page
+router.get('/', async (req, res) => {
+    try {
+        let config = await SiteConfig.findOne();
+        if (!config) config = new SiteConfig();
+
+        // Increment Site Views
+        config.views += 1;
+        await config.save();
+
+        let hero = await HeroSection.findOne();
+        if (!hero) {
+            hero = {
+                title: 'Welcome',
+                subtitle: 'To My Portfolio',
+                description: 'I am a passionate developer.',
+                resumeLink: '',
+                backgroundImage: ''
+            };
+        }
+        const services = await Service.find();
+        const projects = await Project.find().limit(6); // Featured projects
+        const skills = await Skill.find().sort({ level: -1 });
+        const testimonials = await Testimonial.find();
+
+        renderUser(res, 'index', {
+            title: config.homeTitle,
+            config,
+            hero,
+            services,
+            projects,
+            skills,
+            testimonials
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Projects Page
+router.get('/projects', async (req, res) => {
+    try {
+        let config = await SiteConfig.findOne();
+        const projects = await Project.find();
+        renderUser(res, 'projects', { title: 'Projects', config, projects });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+// Resume Page
+router.get('/resume', async (req, res) => {
+    try {
+        let config = await SiteConfig.findOne();
+        const experience = await Experience.find().sort({ startDate: -1 });
+        const skills = await Skill.find().sort({ level: -1 });
+        const hero = await HeroSection.findOne(); // For resume link
+        renderUser(res, 'resume', { title: 'Resume', config, experience, skills, hero });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+// Print Resume Page
+router.get('/resume/print', async (req, res) => {
+    try {
+        let config = await SiteConfig.findOne();
+        const experience = await Experience.find().sort({ startDate: -1 });
+        const skills = await Skill.find().sort({ level: -1 });
+        const hero = await HeroSection.findOne();
+
+        // Render without the main layout, as it's a standalone print view
+        res.render('resume-print', {
+            layout: false,
+            config,
+            experience,
+            skills,
+            hero
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Contact Page
+router.get('/contact', async (req, res) => {
+    try {
+        let config = await SiteConfig.findOne();
+        renderUser(res, 'contact', { title: 'Contact Me', config });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+// Handle Contact Form Submit
+router.post('/contact', async (req, res) => {
+    const { name, email, subject, message } = req.body;
+    const nodemailer = require('nodemailer');
+
+    try {
+        // Create transporter
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', // or your preferred service
+            auth: {
+                user: process.env.EMAIL_USER, // Add these to .env
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        // Email options
+        const mailOptions = {
+            from: email,
+            to: process.env.EMAIL_USER, // Send to yourself
+            subject: `Portfolio Contact: ${subject}`,
+            text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+        };
+
+        // Send email
+        await transporter.sendMail(mailOptions);
+
+        // Redirect with success message (you might want to add flash messages later)
+        // For now, just redirect back to contact
+        res.redirect('/contact?success=true');
+    } catch (err) {
+        console.error('Email Error:', err);
+        res.redirect('/contact?error=true');
+    }
+});
+
+// Track Project Click
+router.get('/track/:id', async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (project) {
+            project.clicks += 1;
+            await project.save();
+            if (project.liveLink) {
+                return res.redirect(project.liveLink);
+            }
+        }
+        res.redirect('/');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/');
+    }
+});
+
+module.exports = router;
