@@ -10,7 +10,6 @@ const HeroSection = require('../models/HeroSection');
 const Education = require('../models/Education');
 const upload = require('../middleware/uploadMiddleware');
 const { requireAuth } = require('../middleware/authMiddleware');
-const redisClient = require('../config/redis');
 const adminHelpers = require('../utils/adminHelpers');
 
 router.use(requireAuth);
@@ -33,22 +32,7 @@ const renderAdmin = (res, view, data) => {
 // Dashboard
 router.get('/dashboard', async (req, res) => {
     try {
-        // Try to get from cache first (with error handling)
-        let cachedData = null;
-        try {
-            if (redisClient.isReady) {
-                cachedData = await redisClient.get('admin:dashboard');
-            }
-        } catch (cacheErr) {
-            console.log('Redis cache read error:', cacheErr.message);
-        }
-
-        if (cachedData) {
-            const data = JSON.parse(cachedData);
-            return renderAdmin(res, 'admin/dashboard', data);
-        }
-
-        // If not in cache, fetch from database
+        // Fetch from database
         const projectCount = await Project.countDocuments();
         const skillCount = await Skill.countDocuments();
         const experienceCount = await Experience.countDocuments();
@@ -57,23 +41,16 @@ router.get('/dashboard', async (req, res) => {
 
         const recentProjects = await Project.find().sort({ _id: -1 }).limit(5);
         const recentSkills = await Skill.find().sort({ _id: -1 }).limit(5);
+        const topProjects = await Project.find().sort({ clicks: -1 }).limit(5);
 
         const data = {
             title: 'Dashboard',
             path: '/dashboard',
             stats: { projectCount, skillCount, experienceCount, testimonialCount, views: config ? config.views : 0 },
             recentProjects,
-            recentSkills
+            recentSkills,
+            topProjects
         };
-
-        // Cache the data (with error handling)
-        try {
-            if (redisClient.isReady) {
-                await redisClient.set('admin:dashboard', JSON.stringify(data), { EX: 3600 });
-            }
-        } catch (cacheErr) {
-            console.log('Redis cache write error:', cacheErr.message);
-        }
 
         renderAdmin(res, 'admin/dashboard', data);
     } catch (err) {

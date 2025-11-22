@@ -57,7 +57,7 @@
                         </td>
                         <td class="px-6 py-4">
                             <a href="/admin/finance/payments/edit/<%= p._id %>" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></a>
-                            <a href="/admin/finance/payments/delete/<%= p._id %>" class="text-red-600 hover:text-red-800" onclick="return confirm('Delete this transaction?')"><i class="fas fa-trash"></i></a>
+                            <a href="/admin/finance/payments/delete/<%= p._id %>" class="text-red-600 hover:text-red-800 delete-btn" data-name="this transaction"><i class="fas fa-trash"></i></a>
                         </td>
                     </tr>
                 <% }) %>

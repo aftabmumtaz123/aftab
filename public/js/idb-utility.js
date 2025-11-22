@@ -1,5 +1,5 @@
 const DB_NAME = 'portfolio-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'pending_changes';
 
 const idbUtility = {
@@ -17,6 +17,11 @@ const idbUtility = {
                 // Create main pending changes store if it doesn't exist
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
                     db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                }
+
+                // Create cache store for dashboard data
+                if (!db.objectStoreNames.contains('cache')) {
+                    db.createObjectStore('cache', { keyPath: 'key' });
                 }
 
                 // Create separate stores for different entity types (v2)

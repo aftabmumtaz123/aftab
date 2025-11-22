@@ -147,20 +147,41 @@ document.addEventListener('DOMContentLoaded', () => {
             '/admin/finance/reports'
         ];
 
+        // Show Progress Bar
+        const progressContainer = document.getElementById('offline-progress-container');
+        const progressBar = document.getElementById('offline-progress-bar');
+        if (progressContainer && progressBar) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+        }
+
         toast.info(`Starting download of ${urlsToCache.length} pages...`);
 
         let successCount = 0;
-        for (const url of urlsToCache) {
+        for (let i = 0; i < urlsToCache.length; i++) {
+            const url = urlsToCache[i];
             try {
                 await fetch(url); // Service Worker will intercept and cache this
                 successCount++;
+
+                // Update Progress Bar
+                if (progressBar) {
+                    const percent = ((i + 1) / urlsToCache.length) * 100;
+                    progressBar.style.width = `${percent}%`;
+                }
+
             } catch (err) {
                 console.error(`Failed to cache ${url}:`, err);
             }
         }
 
+        // Hide Progress Bar after a delay
+        setTimeout(() => {
+            if (progressContainer) progressContainer.style.display = 'none';
+        }, 2000);
+
         if (successCount === urlsToCache.length) {
-            toast.success('Ready for Offline! All pages cached.');
+            toast.success('Successfully cached for offline mode!');
         } else {
             toast.warning(`Download complete. ${successCount}/${urlsToCache.length} pages cached.`);
         }

@@ -37,7 +37,7 @@
                         <td class="px-6 py-4 text-right text-sm font-medium">
                             <a href="/admin/finance/people/<%= p._id %>" class="text-blue-600 hover:text-blue-900 mr-3" title="View Profile"><i class="fas fa-eye"></i></a>
                             <a href="/admin/finance/people/edit/<%= p._id %>" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit"><i class="fas fa-edit"></i></a>
-                            <a href="/admin/finance/people/delete/<%= p._id %>" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure?')" title="Delete"><i class="fas fa-trash"></i></a>
+                            <a href="/admin/finance/people/delete/<%= p._id %>" class="text-red-600 hover:text-red-900 delete-btn" data-name="this person" title="Delete"><i class="fas fa-trash"></i></a>
                         </td>
                     </tr>
                 <% }) %>

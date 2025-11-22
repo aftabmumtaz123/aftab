@@ -19,7 +19,7 @@ const financeHelpers = {
         }
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:expenses');
             await redisClient.del('finance:wallets');
             await redisClient.del('finance:categories');
@@ -46,7 +46,7 @@ const financeHelpers = {
         }
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:expenses');
             await redisClient.del('finance:wallets');
             await redisClient.del('finance:categories');
@@ -67,7 +67,7 @@ const financeHelpers = {
         await Expense.findByIdAndDelete(id);
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:expenses');
             await redisClient.del('finance:wallets');
             await redisClient.del('finance:categories');
@@ -85,7 +85,7 @@ const financeHelpers = {
         }
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:income');
             await redisClient.del('finance:wallets');
         }
@@ -109,7 +109,7 @@ const financeHelpers = {
         }
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:income');
             await redisClient.del('finance:wallets');
         }
@@ -128,7 +128,7 @@ const financeHelpers = {
         await Income.findByIdAndDelete(id);
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:income');
             await redisClient.del('finance:wallets');
         }
@@ -218,7 +218,7 @@ const financeHelpers = {
         }
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:payments');
             await redisClient.del('finance:wallets');
             await redisClient.del('finance:people');
@@ -245,7 +245,7 @@ const financeHelpers = {
         }
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:payments');
             await redisClient.del('finance:wallets');
             await redisClient.del('finance:people');
@@ -266,7 +266,7 @@ const financeHelpers = {
         await Payment.findByIdAndDelete(id);
 
         // Clear Cache
-        if (redisClient.isOpen) {
+        if (redisClient?.isReady) {
             await redisClient.del('finance:payments');
             await redisClient.del('finance:wallets');
             await redisClient.del('finance:people');

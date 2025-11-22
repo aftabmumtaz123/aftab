@@ -291,19 +291,19 @@
                                         <p class="font-bold text-gray-900">
                                             <%= item.type === 'expense' ? item.title : 
                                                item.type === 'income' ? item.source : 
-                                               (item.type === 'send' ? 'Sent to ' + (item.person ? item.person.name : 'Unknown') : 'Received from ' + (item.person ? item.person.name : 'Unknown')) %>
+                                               (item.paymentType === 'send' ? 'Sent to ' + (item.person ? item.person.name : 'Unknown') : 'Received from ' + (item.person ? item.person.name : 'Unknown')) %>
                                         </p>
                                         <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
                                             <span><%= new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
                                             <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                            <span><%= item.category || (item.type === 'payment' ? 'Payment' : 'General') %></span>
+                                            <span><%= (item.category && item.category.name) ? item.category.name : (item.category || (item.type === 'payment' ? 'Payment' : 'General')) %></span>
                                         </p>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <span class="font-bold text-base <%= item.type === 'expense' || (item.type === 'payment' && item.type === 'send') ? 'text-red-600' : 'text-green-600' %>">
-                                    <%= item.type === 'expense' || (item.type === 'payment' && item.type === 'send') ? '-' : '+' %> 
+                                <span class="font-bold text-base <%= item.type === 'expense' || (item.type === 'payment' && item.paymentType === 'send') ? 'text-red-600' : 'text-green-600' %>">
+                                    <%= item.type === 'expense' || (item.type === 'payment' && item.paymentType === 'send') ? '-' : '+' %> 
                                     Rs <%= item.amount.toLocaleString() %>
                                 </span>
                             </td>

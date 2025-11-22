@@ -55,19 +55,5 @@ router.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-// SEED ROUTE (Remove or protect in production)
-router.get('/seed', async (req, res) => {
-    try {
-        const count = await User.countDocuments();
-        if (count === 0) {
-            const user = await User.create({ username: 'aftab123', password: 'aftab123' });
-            res.send('Admin created: admin / password123');
-        } else {
-            res.send('Admin already exists');
-        }
-    } catch (err) {
-        res.status(400).send(err.message);
-    }
-});
 
 module.exports = router;

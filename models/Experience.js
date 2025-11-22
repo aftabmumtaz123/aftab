@@ -7,6 +7,6 @@ const experienceSchema = new mongoose.Schema({
     endDate: { type: Date }, // Null means "Present"
     description: { type: String },
     current: { type: Boolean, default: false }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Experience', experienceSchema);

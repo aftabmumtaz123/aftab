@@ -34,7 +34,7 @@
                         <td class="px-6 py-4 font-bold text-green-600">+ Rs <%= i.amount.toLocaleString() %></td>
                         <td class="px-6 py-4">
                             <a href="/admin/finance/income/edit/<%= i._id %>" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></a>
-                            <a href="/admin/finance/income/delete/<%= i._id %>" class="text-red-600 hover:text-red-800" onclick="return confirm('Delete this income record?')"><i class="fas fa-trash"></i></a>
+                            <a href="/admin/finance/income/delete/<%= i._id %>" class="text-red-600 hover:text-red-800 delete-btn" data-name="this income record"><i class="fas fa-trash"></i></a>
                         </td>
                     </tr>
                 <% }) %>

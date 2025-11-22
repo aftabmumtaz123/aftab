@@ -34,15 +34,15 @@ class Toast {
         };
 
         toast.innerHTML = `
-            <div class="${colors[type]} shadow-lg rounded-lg p-4 flex items-start gap-3">
+            <div class="${colors[type]} shadow-xl rounded-r-lg p-4 flex items-center gap-4 min-w-[320px] border border-gray-100">
                 <div class="flex-shrink-0 text-xl">
                     ${icons[type]}
                 </div>
                 <div class="flex-1">
-                    <p class="text-gray-800 font-medium">${message}</p>
+                    <p class="text-gray-800 font-semibold text-sm">${message}</p>
                 </div>
-                <button class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors" onclick="this.closest('.toast-item').remove()">
-                    <i class="fas fa-times"></i>
+                <button class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-50" onclick="this.closest('.toast-item').remove()">
+                    <i class="fas fa-times text-sm"></i>
                 </button>
             </div>
         `;

@@ -50,19 +50,28 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
 
-    // 1. API GET requests (Stale-while-revalidate)
-    // Cache finance data to show it offline
+    // 1. API GET requests (Network-First for fresh data)
+    // Try network first, then fall back to cache if offline
     if (requestUrl.pathname.startsWith('/admin/finance') && event.request.method === 'GET') {
         event.respondWith(
-            caches.open(CACHE_NAME).then(cache => {
-                return cache.match(event.request).then(cachedResponse => {
-                    const fetchPromise = fetch(event.request).then(networkResponse => {
-                        cache.put(event.request, networkResponse.clone());
-                        return networkResponse;
-                    });
-                    return cachedResponse || fetchPromise;
-                });
-            })
+            fetch(event.request)
+                .then(response => {
+                    // Check if valid response
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    // Clone and cache
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME)
+                        .then(cache => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    return response;
+                })
+                .catch(() => {
+                    // Network failed, try cache
+                    return caches.match(event.request);
+                })
         );
         return;
     }

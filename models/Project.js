@@ -8,6 +8,6 @@ const projectSchema = new mongoose.Schema({
     repoLink: { type: String, default: "" },
     tags: [String], // Array of tech stack tags
     clicks: { type: Number, default: 0 }
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Project', projectSchema);
