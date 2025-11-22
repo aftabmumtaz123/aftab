@@ -15,6 +15,16 @@ const adminHelpers = require('../utils/adminHelpers');
 
 router.use(requireAuth);
 
+// Middleware to check DB connection for all admin routes
+router.use((req, res, next) => {
+    if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
+        // If it's a sync request or static asset, let it pass (though static assets usually handled before)
+        // But for admin pages, if DB is down, show offline page
+        return res.render('offline', { layout: false });
+    }
+    next();
+});
+
 // Helper to render with layout
 const renderAdmin = (res, view, data) => {
     res.render(view, { layout: 'layouts/adminLayout', ...data });
@@ -131,6 +141,8 @@ router.get('/skills/:id/edit', async (req, res) => {
         const skill = await Skill.findById(req.params.id);
         renderAdmin(res, 'admin/edit-skill', { title: 'Edit Skill', path: '/skills', skill });
     } catch (err) {
+        console.error(err);
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         res.status(500).send('Error fetching skill');
     }
 });
@@ -182,6 +194,8 @@ router.get('/experience/:id/edit', async (req, res) => {
         const experience = await Experience.findById(req.params.id);
         renderAdmin(res, 'admin/edit-experience', { title: 'Edit Experience', path: '/experience', experience });
     } catch (err) {
+        console.error(err);
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         res.status(500).send('Error fetching experience');
     }
 });
@@ -242,6 +256,8 @@ router.get('/projects/:id/edit', async (req, res) => {
         const project = await Project.findById(req.params.id);
         renderAdmin(res, 'admin/edit-project', { title: 'Edit Project', path: '/projects', project });
     } catch (err) {
+        console.error(err);
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         res.status(500).send('Error fetching project');
     }
 });
@@ -303,6 +319,8 @@ router.get('/testimonials/:id/edit', async (req, res) => {
         const testimonial = await Testimonial.findById(req.params.id);
         renderAdmin(res, 'admin/edit-testimonial', { title: 'Edit Testimonial', path: '/testimonials', testimonial });
     } catch (err) {
+        console.error(err);
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         res.status(500).send('Error fetching testimonial');
     }
 });
@@ -461,6 +479,8 @@ router.get('/education/:id/edit', async (req, res) => {
             education
         });
     } catch (err) {
+        console.error(err);
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         res.status(500).send('Error loading education');
     }
 });

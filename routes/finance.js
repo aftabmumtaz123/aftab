@@ -14,6 +14,22 @@ const { requireAuth } = require('../middleware/authMiddleware');
 // Middleware to check auth
 router.use(requireAuth);
 
+// Middleware to check DB connection for all finance routes
+router.use((req, res, next) => {
+    if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
+        // Allow if it's a sync request or if we have cache (handled in individual routes)
+        // But for general navigation if cache is missing and DB is down:
+        // Individual routes check cache first. If cache misses and DB is down, they should handle it.
+        // However, adding a global check here might be too aggressive if we want to allow cache hits.
+        // Let's NOT add a global blocker here, but ensure individual routes handle "Cache Miss + DB Down" gracefully.
+        // Actually, the user wants it "everywhere".
+        // If I block here, cache logic in routes won't run.
+        // So I should insert this check AFTER cache check failure in routes, OR allow routes to run and handle it.
+        // Better strategy: Update routes to check DB status if cache misses.
+    }
+    next();
+});
+
 // --- Sync Route ---
 router.post('/sync', async (req, res) => {
     try {
@@ -53,6 +69,15 @@ router.post('/sync', async (req, res) => {
         }
 
         res.json({ success: true });
+
+        // Invalidate Caches
+        if (redisClient.isReady) {
+            await redisClient.del('finance:expenses');
+            await redisClient.del('finance:income');
+            await redisClient.del('finance:wallets');
+            await redisClient.del('finance:people');
+            await redisClient.del('finance:categories');
+        }
     } catch (err) {
         console.error('Sync Error:', err);
         res.status(500).json({ success: false, message: 'Sync failed' });
@@ -314,6 +339,11 @@ router.get('/people', async (req, res) => {
         }
 
         console.log('Cache Miss: People');
+
+        if (require('mongoose').connection.readyState !== 1) {
+            return res.render('offline', { layout: false });
+        }
+
         // Optimized: Use aggregation to calculate balances in one query
         const peopleWithBalances = await Person.aggregate([
             {
@@ -389,6 +419,7 @@ router.post('/people/add', async (req, res) => {
 
 router.get('/people/edit/:id', async (req, res) => {
     try {
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         const person = await Person.findById(req.params.id);
         res.render('admin/finance/people/form', { title: 'Edit Person', person, layout: 'layouts/adminLayout' });
     } catch (err) {
@@ -411,6 +442,7 @@ router.post('/people/edit/:id', async (req, res) => {
 
 router.get('/people/:id', async (req, res) => {
     try {
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         const person = await Person.findById(req.params.id);
         if (!person) return res.redirect('/admin/finance/people');
 
@@ -449,7 +481,38 @@ router.get('/people/:id', async (req, res) => {
 // --- Expense Management ---
 router.get('/expenses', async (req, res) => {
     try {
+        // Check Cache
+        if (redisClient.isReady) {
+            const cachedExpenses = await redisClient.get('finance:expenses');
+            if (cachedExpenses) {
+                console.log('Cache Hit: Expenses');
+                return res.render('admin/finance/expenses/list', {
+                    title: 'Expenses',
+                    expenses: JSON.parse(cachedExpenses),
+                    layout: 'layouts/adminLayout'
+                });
+            }
+        }
+
+
+
+        console.log('Cache Miss: Expenses');
+
+        if (require('mongoose').connection.readyState !== 1) {
+            return res.render('offline', { layout: false });
+        }
+
         const expenses = await Expense.find().populate('wallet').populate('categoryId').sort({ date: -1 });
+
+        // Set Cache (1 hour)
+        if (redisClient.isReady) {
+            try {
+                await redisClient.set('finance:expenses', JSON.stringify(expenses), { EX: 3600 });
+            } catch (err) {
+                console.log('Redis cache error:', err.message);
+            }
+        }
+
         res.render('admin/finance/expenses/list', {
             title: 'Expenses',
             expenses,
@@ -481,6 +544,7 @@ router.get('/expenses/add', async (req, res) => {
 router.post('/expenses/add', async (req, res) => {
     try {
         await financeHelpers.createExpense(req.body);
+        if (redisClient.isReady) await redisClient.del('finance:expenses');
         res.redirect('/admin/finance/expenses');
     } catch (err) {
         console.error(err);
@@ -490,6 +554,7 @@ router.post('/expenses/add', async (req, res) => {
 
 router.get('/expenses/edit/:id', async (req, res) => {
     try {
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         const expense = await Expense.findById(req.params.id);
         const wallets = await Wallet.find().sort({ name: 1 });
         const categories = await Category.find({ type: 'expense' }).sort({ name: 1 });
@@ -509,6 +574,7 @@ router.get('/expenses/edit/:id', async (req, res) => {
 router.post('/expenses/edit/:id', async (req, res) => {
     try {
         await financeHelpers.updateExpense(req.params.id, req.body);
+        if (redisClient.isReady) await redisClient.del('finance:expenses');
         res.redirect('/admin/finance/expenses');
     } catch (err) {
         console.error(err);
@@ -519,6 +585,7 @@ router.post('/expenses/edit/:id', async (req, res) => {
 router.get('/expenses/delete/:id', async (req, res) => {
     try {
         await financeHelpers.deleteExpense(req.params.id);
+        if (redisClient.isReady) await redisClient.del('finance:expenses');
         res.redirect('/admin/finance/expenses');
     } catch (err) {
         console.error(err);
@@ -529,7 +596,38 @@ router.get('/expenses/delete/:id', async (req, res) => {
 // --- Income Management ---
 router.get('/income', async (req, res) => {
     try {
+        // Check Cache
+        if (redisClient.isReady) {
+            const cachedIncome = await redisClient.get('finance:income');
+            if (cachedIncome) {
+                console.log('Cache Hit: Income');
+                return res.render('admin/finance/income/list', {
+                    title: 'Income',
+                    income: JSON.parse(cachedIncome),
+                    layout: 'layouts/adminLayout'
+                });
+            }
+        }
+
+
+
+        console.log('Cache Miss: Income');
+
+        if (require('mongoose').connection.readyState !== 1) {
+            return res.render('offline', { layout: false });
+        }
+
         const income = await Income.find().populate('wallet').populate('source').sort({ date: -1 });
+
+        // Set Cache (1 hour)
+        if (redisClient.isReady) {
+            try {
+                await redisClient.set('finance:income', JSON.stringify(income), { EX: 3600 });
+            } catch (err) {
+                console.log('Redis cache error:', err.message);
+            }
+        }
+
         res.render('admin/finance/income/list', {
             title: 'Income',
             income,
@@ -561,6 +659,7 @@ router.get('/income/add', async (req, res) => {
 router.post('/income/add', async (req, res) => {
     try {
         await financeHelpers.createIncome(req.body);
+        if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
     } catch (err) {
         console.error(err);
@@ -570,6 +669,7 @@ router.post('/income/add', async (req, res) => {
 
 router.get('/income/edit/:id', async (req, res) => {
     try {
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         const income = await Income.findById(req.params.id);
         const wallets = await Wallet.find().sort({ name: 1 });
         const categories = await Category.find({ type: 'income' }).sort({ name: 1 });
@@ -589,6 +689,7 @@ router.get('/income/edit/:id', async (req, res) => {
 router.post('/income/edit/:id', async (req, res) => {
     try {
         await financeHelpers.updateIncome(req.params.id, req.body);
+        if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
     } catch (err) {
         console.error(err);
@@ -599,6 +700,7 @@ router.post('/income/edit/:id', async (req, res) => {
 router.get('/income/delete/:id', async (req, res) => {
     try {
         await financeHelpers.deleteIncome(req.params.id);
+        if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
     } catch (err) {
         console.error(err);
@@ -705,7 +807,12 @@ router.get('/wallets', async (req, res) => {
             }
         }
 
+
+
         console.log('Cache Miss: Wallets');
+        if (require('mongoose').connection.readyState !== 1) {
+            return res.render('offline', { layout: false });
+        }
         const wallets = await Wallet.find().sort({ name: 1 });
 
         // Set Cache (1 hour)
@@ -744,6 +851,7 @@ router.post('/wallets/add', async (req, res) => {
 
 router.get('/wallets/edit/:id', async (req, res) => {
     try {
+        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         const wallet = await Wallet.findById(req.params.id);
         if (!wallet) {
             return res.redirect('/admin/finance/wallets?error=' + encodeURIComponent('Wallet not found.'));

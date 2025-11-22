@@ -1,19 +1,21 @@
-const CACHE_NAME = 'portfolio-v4';
+const CACHE_NAME = 'portfolio-v3';
 const ASSETS_TO_CACHE = [
     '/',
-    '/manifest.json',
-    '/images/icons/icon-192.png',
-    '/images/icons/icon-512.png',
+    '/admin/dashboard',
+    '/admin/finance',
+    '/css/style.css',
     '/js/idb-utility.js',
     '/js/offline-sync.js',
-    '/js/toast.js'
-    // Note: External CDN resources (Tailwind, Chart.js, FontAwesome, Google Fonts)
-    // are NOT cached to avoid CORS issues. They will be fetched from network.
+    '/js/toast.js',
+    '/manifest.json',
+    'https://cdn.tailwindcss.com',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    '/offline'
 ];
 
 // Install Event
 self.addEventListener('install', event => {
-    console.log('Service Worker installing...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
@@ -49,7 +51,7 @@ self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
 
     // 1. API GET requests (Stale-while-revalidate)
-    // We only cache GET requests to the finance API to show data offline
+    // Cache finance data to show it offline
     if (requestUrl.pathname.startsWith('/admin/finance') && event.request.method === 'GET') {
         event.respondWith(
             caches.open(CACHE_NAME).then(cache => {
@@ -83,21 +85,21 @@ self.addEventListener('fetch', event => {
                     return response;
                 })
                 .catch(() => {
-                    // If network fails, try cache
+                    // If network fails, try to serve from cache
                     return caches.match(event.request)
                         .then(response => {
                             if (response) {
                                 return response;
                             }
-                            // Fallback to dashboard if specific page not found
-                            return caches.match('/admin/finance');
+                            // If not in cache, serve offline page
+                            return caches.match('/offline');
                         });
                 })
         );
         return;
     }
 
-    // 3. Static Assets (Cache First, fall back to Network)
+    // 3. Static Assets (Cache First)
     event.respondWith(
         caches.match(event.request)
             .then(response => {

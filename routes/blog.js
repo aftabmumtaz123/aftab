@@ -3,6 +3,15 @@ const router = express.Router();
 const BlogPost = require('../models/BlogPost');
 const { requireAuth } = require('../middleware/authMiddleware');
 
+// Middleware to check DB connection for all blog routes
+router.use((req, res, next) => {
+    if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
+        // For public blog pages, we might want to show offline page if DB is down
+        return res.render('offline', { layout: false });
+    }
+    next();
+});
+
 // --- Public Routes ---
 
 // Blog Home (List)

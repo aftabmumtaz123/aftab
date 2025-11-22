@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline | Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center h-screen">
+    <div class="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md w-full mx-4">
+        <div class="mb-6 text-gray-200">
+            <i class="fas fa-wifi text-6xl"></i>
+            <div class="mt-2 text-4xl relative" style="top: -20px; left: 20px;">
+                <i class="fas fa-slash text-red-500"></i>
+            </div>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">You are offline</h1>
+        <p class="text-gray-600 mb-8">We couldn't load this page. Please check your internet connection.</p>
+        
+        <div class="space-y-3">
+            <a href="/admin/finance" class="block w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+                Go to Finance Dashboard
+            </a>
+            <button onclick="window.location.reload()" class="block w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                Try Again
+            </button>
+        </div>
+    </div>
+</body>
+</html>

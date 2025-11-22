@@ -15,6 +15,17 @@ const renderUser = (res, view, data) => {
 };
 
 // Home Page
+// Middleware to check DB connection for all public routes
+router.use((req, res, next) => {
+    if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
+        // If it's the home page, we might want to try to render it if possible, 
+        // but it relies on DB for projects, skills etc.
+        // So yes, offline page is appropriate if DB is down.
+        return res.render('offline', { layout: false });
+    }
+    next();
+});
+
 router.get('/', async (req, res) => {
     try {
         let config = await SiteConfig.findOne();

@@ -45,11 +45,30 @@ app.use('/', blogRoutes); // Blog routes handle both /blog and /admin/blog
 const PORT = process.env.PORT || 3000;
 
 // Database Connection
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => {
-        console.log('MongoDB Connected');
-        app.listen(PORT, () => {
-            console.log(`Server running on http://localhost:${PORT}`);
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGO_URI, {
+            serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s
         });
-    })
-    .catch(err => console.error(err));
+        console.log('MongoDB Connected');
+    } catch (err) {
+        console.error('MongoDB Connection Error:', err.message);
+        // Do not exit process, allow server to run for offline mode
+    }
+};
+
+// Connect to DB but don't block server startup
+connectDB();
+
+// Handle MongoDB errors after initial connection
+mongoose.connection.on('error', err => {
+    console.error('MongoDB Runtime Error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB Disconnected');
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});

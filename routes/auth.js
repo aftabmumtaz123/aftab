@@ -3,6 +3,14 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+// Middleware to check DB connection for auth routes
+router.use((req, res, next) => {
+    if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
+        return res.render('offline', { layout: false });
+    }
+    next();
+});
+
 // Create Token
 const maxAge = 3 * 24 * 60 * 60; // 3 days
 const createToken = (id) => {
@@ -20,6 +28,11 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
+        // Check DB connection first
+        if (require('mongoose').connection.readyState !== 1) {
+            throw Error('Database disconnected');
+        }
+
         const user = await User.findOne({ username });
         if (user) {
             const auth = await user.comparePassword(password);
