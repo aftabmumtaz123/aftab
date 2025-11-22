@@ -110,10 +110,43 @@
                 <div class="border-b border-gray-100 mt-8"></div>
             </section>
 
-            <!-- III. Skills (Replacing Education if empty, or adding as III) -->
+            <!-- III. Education -->
+            <% if(education && education.length > 0) { %>
+            <section>
+                <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                    <span class="mr-2">III.</span> Education
+                </h3>
+                <div class="space-y-6">
+                    <% education.forEach(edu => { %>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-lg"><%= edu.degree %> in <%= edu.field %></h4>
+                            <div class="flex justify-between items-baseline mb-2">
+                                <span class="font-bold text-gray-600">[<%= edu.institution %>]</span>
+                                <span class="text-sm text-gray-500 font-medium">
+                                    [<%= new Date(edu.startDate).getFullYear() %> - <%= edu.current ? 'Present' : (edu.endDate ? new Date(edu.endDate).getFullYear() : 'Present') %>]
+                                </span>
+                            </div>
+                            <% if(edu.grade) { %>
+                                <p class="text-gray-600 text-sm mb-1">
+                                    <i class="fas fa-award text-yellow-600 mr-1"></i> Grade: <%= edu.grade %>
+                                </p>
+                            <% } %>
+                            <% if(edu.description) { %>
+                                <p class="text-gray-600 text-sm leading-relaxed">
+                                    • <%= edu.description %>
+                                </p>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                </div>
+                <div class="border-b border-gray-100 mt-8"></div>
+            </section>
+            <% } %>
+
+            <!-- IV. Skills (or III if no education) -->
             <section>
                 <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                    <span class="mr-2">III.</span> Skills & Expertise
+                    <span class="mr-2"><%= (education && education.length > 0) ? 'IV.' : 'III.' %></span> Skills & Expertise
                 </h3>
                 <div class="grid grid-cols-2 gap-4">
                     <% skills.forEach(skill => { %>

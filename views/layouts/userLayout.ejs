@@ -80,6 +80,11 @@
 
                 <!-- Right Icons (Desktop) -->
                 <div class="hidden md:flex items-center space-x-6">
+                    <!-- Offline Status Indicator -->
+                    <div id="offline-status" class="hidden items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-800 text-white border border-white/20">
+                        <i class="fas fa-wifi text-xs"></i>
+                        <span id="status-text">Online</span>
+                    </div>
                     <% if(config.github) { %>
                         <a href="<%= config.github %>" target="_blank" class="text-white hover:text-gray-300 transition-colors">
                             <i class="fab fa-github text-3xl"></i>
@@ -182,6 +187,37 @@
 
         if(themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
         if(themeToggleMobileBtn) themeToggleMobileBtn.addEventListener('click', toggleTheme);
+
+        // Offline Status Indicator
+        const statusIndicator = document.getElementById('offline-status');
+        const statusText = document.getElementById('status-text');
+        
+        const updateOnlineStatus = () => {
+            if (!statusIndicator) return;
+            
+            if (navigator.onLine) {
+                statusIndicator.classList.remove('bg-red-900', 'border-red-700');
+                statusIndicator.classList.add('bg-green-900', 'border-green-700');
+                statusText.textContent = 'Online';
+                statusIndicator.classList.add('flex');
+                statusIndicator.classList.remove('hidden');
+                
+                // Hide after 3 seconds if online
+                setTimeout(() => {
+                    statusIndicator.classList.add('hidden');
+                    statusIndicator.classList.remove('flex');
+                }, 3000);
+            } else {
+                statusIndicator.classList.remove('bg-green-900', 'border-green-700');
+                statusIndicator.classList.add('bg-red-900', 'border-red-700', 'flex');
+                statusIndicator.classList.remove('hidden');
+                statusText.textContent = 'Offline';
+            }
+        };
+        
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

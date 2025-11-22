@@ -7,8 +7,11 @@ const Skill = require('../models/Skill');
 const Experience = require('../models/Experience');
 const Testimonial = require('../models/Testimonial');
 const HeroSection = require('../models/HeroSection');
+const Education = require('../models/Education');
 const upload = require('../middleware/uploadMiddleware');
 const { requireAuth } = require('../middleware/authMiddleware');
+const redisClient = require('../config/redis');
+const adminHelpers = require('../utils/adminHelpers');
 
 router.use(requireAuth);
 
@@ -20,6 +23,22 @@ const renderAdmin = (res, view, data) => {
 // Dashboard
 router.get('/dashboard', async (req, res) => {
     try {
+        // Try to get from cache first (with error handling)
+        let cachedData = null;
+        try {
+            if (redisClient.isReady) {
+                cachedData = await redisClient.get('admin:dashboard');
+            }
+        } catch (cacheErr) {
+            console.log('Redis cache read error:', cacheErr.message);
+        }
+
+        if (cachedData) {
+            const data = JSON.parse(cachedData);
+            return renderAdmin(res, 'admin/dashboard', data);
+        }
+
+        // If not in cache, fetch from database
         const projectCount = await Project.countDocuments();
         const skillCount = await Skill.countDocuments();
         const experienceCount = await Experience.countDocuments();
@@ -29,13 +48,24 @@ router.get('/dashboard', async (req, res) => {
         const recentProjects = await Project.find().sort({ _id: -1 }).limit(5);
         const recentSkills = await Skill.find().sort({ _id: -1 }).limit(5);
 
-        renderAdmin(res, 'admin/dashboard', {
+        const data = {
             title: 'Dashboard',
             path: '/dashboard',
             stats: { projectCount, skillCount, experienceCount, testimonialCount, views: config ? config.views : 0 },
             recentProjects,
             recentSkills
-        });
+        };
+
+        // Cache the data (with error handling)
+        try {
+            if (redisClient.isReady) {
+                await redisClient.set('admin:dashboard', JSON.stringify(data), { EX: 3600 });
+            }
+        } catch (cacheErr) {
+            console.log('Redis cache write error:', cacheErr.message);
+        }
+
+        renderAdmin(res, 'admin/dashboard', data);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
@@ -57,7 +87,7 @@ router.post('/hero', upload.single('backgroundImage'), async (req, res) => {
     try {
         const updateData = req.body;
         if (req.file) updateData.backgroundImage = req.file.path;
-        await HeroSection.findOneAndUpdate({}, updateData, { upsert: true });
+        await adminHelpers.updateHero(updateData);
         res.redirect('/admin/hero');
     } catch (err) {
         res.status(500).send('Error updating hero');
@@ -76,7 +106,7 @@ router.get('/skills', async (req, res) => {
 
 router.post('/skills', async (req, res) => {
     try {
-        await Skill.create(req.body);
+        await adminHelpers.createSkill(req.body);
         res.redirect('/admin/skills');
     } catch (err) {
         res.status(500).send('Error adding skill');
@@ -89,7 +119,7 @@ router.get('/skills/add', (req, res) => {
 
 router.post('/skills/:id/delete', async (req, res) => {
     try {
-        await Skill.findByIdAndDelete(req.params.id);
+        await adminHelpers.deleteSkill(req.params.id);
         res.redirect('/admin/skills');
     } catch (err) {
         res.status(500).send('Error deleting skill');
@@ -107,7 +137,7 @@ router.get('/skills/:id/edit', async (req, res) => {
 
 router.post('/skills/:id/edit', async (req, res) => {
     try {
-        await Skill.findByIdAndUpdate(req.params.id, req.body);
+        await adminHelpers.updateSkill(req.params.id, req.body);
         res.redirect('/admin/skills');
     } catch (err) {
         res.status(500).send('Error updating skill');
@@ -127,7 +157,7 @@ router.get('/experience', async (req, res) => {
 router.post('/experience', async (req, res) => {
     try {
         req.body.current = !!req.body.current; // Convert to boolean
-        await Experience.create(req.body);
+        await adminHelpers.createExperience(req.body);
         res.redirect('/admin/experience');
     } catch (err) {
         res.status(500).send('Error adding experience');
@@ -140,7 +170,7 @@ router.get('/experience/add', (req, res) => {
 
 router.post('/experience/:id/delete', async (req, res) => {
     try {
-        await Experience.findByIdAndDelete(req.params.id);
+        await adminHelpers.deleteExperience(req.params.id);
         res.redirect('/admin/experience');
     } catch (err) {
         res.status(500).send('Error deleting experience');
@@ -159,7 +189,7 @@ router.get('/experience/:id/edit', async (req, res) => {
 router.post('/experience/:id/edit', async (req, res) => {
     try {
         req.body.current = !!req.body.current;
-        await Experience.findByIdAndUpdate(req.params.id, req.body);
+        await adminHelpers.updateExperience(req.params.id, req.body);
         res.redirect('/admin/experience');
     } catch (err) {
         res.status(500).send('Error updating experience');
@@ -187,7 +217,7 @@ router.post('/projects', upload.single('image'), async (req, res) => {
         };
         if (req.file) projectData.imageUrl = req.file.path;
 
-        await Project.create(projectData);
+        await adminHelpers.createProject(projectData);
         res.redirect('/admin/projects');
     } catch (err) {
         res.status(500).send('Error adding project');
@@ -200,7 +230,7 @@ router.get('/projects/add', (req, res) => {
 
 router.post('/projects/:id/delete', async (req, res) => {
     try {
-        await Project.findByIdAndDelete(req.params.id);
+        await adminHelpers.deleteProject(req.params.id);
         res.redirect('/admin/projects');
     } catch (err) {
         res.status(500).send('Error deleting project');
@@ -227,7 +257,7 @@ router.post('/projects/:id/edit', upload.single('image'), async (req, res) => {
         };
         if (req.file) projectData.imageUrl = req.file.path;
 
-        await Project.findByIdAndUpdate(req.params.id, projectData);
+        await adminHelpers.updateProject(req.params.id, projectData);
         res.redirect('/admin/projects');
     } catch (err) {
         res.status(500).send('Error updating project');
@@ -248,7 +278,7 @@ router.post('/testimonials', upload.single('photo'), async (req, res) => {
     try {
         const data = req.body;
         if (req.file) data.photoUrl = req.file.path;
-        await Testimonial.create(data);
+        await adminHelpers.createTestimonial(data);
         res.redirect('/admin/testimonials');
     } catch (err) {
         res.status(500).send('Error adding testimonial');
@@ -261,7 +291,7 @@ router.get('/testimonials/add', (req, res) => {
 
 router.post('/testimonials/:id/delete', async (req, res) => {
     try {
-        await Testimonial.findByIdAndDelete(req.params.id);
+        await adminHelpers.deleteTestimonial(req.params.id);
         res.redirect('/admin/testimonials');
     } catch (err) {
         res.status(500).send('Error deleting testimonial');
@@ -281,7 +311,7 @@ router.post('/testimonials/:id/edit', upload.single('photo'), async (req, res) =
     try {
         const data = req.body;
         if (req.file) data.photoUrl = req.file.path;
-        await Testimonial.findByIdAndUpdate(req.params.id, data);
+        await adminHelpers.updateTestimonial(req.params.id, data);
         res.redirect('/admin/testimonials');
     } catch (err) {
         res.status(500).send('Error updating testimonial');
@@ -303,10 +333,156 @@ router.post('/config', upload.single('aboutImage'), async (req, res) => {
     try {
         const updateData = req.body;
         if (req.file) updateData.aboutImage = req.file.path;
-        await SiteConfig.findOneAndUpdate({}, updateData, { upsert: true });
+        await adminHelpers.updateConfig(updateData);
         res.redirect('/admin/config');
     } catch (err) {
         res.status(500).send('Error updating config');
+    }
+});
+
+// Sync Endpoint for Offline Changes
+router.post('/sync', async (req, res) => {
+    try {
+        const { changes } = req.body;
+
+        if (!changes || !Array.isArray(changes)) {
+            return res.status(400).json({ success: false, message: 'Invalid sync data' });
+        }
+
+        const results = [];
+
+        for (const change of changes) {
+            try {
+                const { url, method, body } = change;
+
+                // Parse the URL to determine entity type and action
+                if (url.includes('/projects')) {
+                    if (method === 'POST' && url.endsWith('/projects')) {
+                        await adminHelpers.createProject(body);
+                    } else if (url.includes('/edit')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.updateProject(id, body);
+                    } else if (url.includes('/delete')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.deleteProject(id);
+                    }
+                } else if (url.includes('/skills')) {
+                    if (method === 'POST' && url.endsWith('/skills')) {
+                        await adminHelpers.createSkill(body);
+                    } else if (url.includes('/edit')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.updateSkill(id, body);
+                    } else if (url.includes('/delete')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.deleteSkill(id);
+                    }
+                } else if (url.includes('/experience')) {
+                    if (method === 'POST' && url.endsWith('/experience')) {
+                        await adminHelpers.createExperience(body);
+                    } else if (url.includes('/edit')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.updateExperience(id, body);
+                    } else if (url.includes('/delete')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.deleteExperience(id);
+                    }
+                } else if (url.includes('/testimonials')) {
+                    if (method === 'POST' && url.endsWith('/testimonials')) {
+                        await adminHelpers.createTestimonial(body);
+                    } else if (url.includes('/edit')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.updateTestimonial(id, body);
+                    } else if (url.includes('/delete')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.deleteTestimonial(id);
+                    }
+                } else if (url.includes('/config')) {
+                    await adminHelpers.updateConfig(body);
+                } else if (url.includes('/hero')) {
+                    await adminHelpers.updateHero(body);
+                }
+
+                results.push({ success: true, change });
+            } catch (err) {
+                console.error('Error processing change:', err);
+                results.push({ success: false, change, error: err.message });
+            }
+        }
+
+        res.json({ success: true, results });
+    } catch (err) {
+        console.error('Sync error:', err);
+        res.status(500).json({ success: false, message: 'Sync failed' });
+    }
+});
+
+// ===== EDUCATION ROUTES =====
+
+// List Education
+router.get('/education', async (req, res) => {
+    try {
+        const education = await Education.find().sort({ startDate: -1 });
+        renderAdmin(res, 'admin/education', {
+            title: 'Education',
+            path: '/education',
+            education
+        });
+    } catch (err) {
+        res.status(500).send('Error loading education');
+    }
+});
+
+// Add Education Form
+router.get('/education/add', (req, res) => {
+    renderAdmin(res, 'admin/add-education', {
+        title: 'Add Education',
+        path: '/education'
+    });
+});
+
+// Create Education
+router.post('/education', async (req, res) => {
+    try {
+        req.body.current = !!req.body.current;
+        await adminHelpers.createEducation(req.body);
+        res.redirect('/admin/education');
+    } catch (err) {
+        res.status(500).send('Error adding education');
+    }
+});
+
+// Edit Education Form
+router.get('/education/:id/edit', async (req, res) => {
+    try {
+        const education = await Education.findById(req.params.id);
+        renderAdmin(res, 'admin/edit-education', {
+            title: 'Edit Education',
+            path: '/education',
+            education
+        });
+    } catch (err) {
+        res.status(500).send('Error loading education');
+    }
+});
+
+// Update Education
+router.post('/education/:id/edit', async (req, res) => {
+    try {
+        req.body.current = !!req.body.current;
+        await adminHelpers.updateEducation(req.params.id, req.body);
+        res.redirect('/admin/education');
+    } catch (err) {
+        res.status(500).send('Error updating education');
+    }
+});
+
+// Delete Education
+router.post('/education/:id/delete', async (req, res) => {
+    try {
+        await adminHelpers.deleteEducation(req.params.id);
+        res.redirect('/admin/education');
+    } catch (err) {
+        res.status(500).send('Error deleting education');
     }
 });
 

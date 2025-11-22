@@ -49,25 +49,69 @@
                     <%= config.aboutText || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Amet vulputate tristique quam felis. Id phasellus dui orci vulputate consequat nulla proin. Id sit scelerisque neque, proin bibendum diam." %>
                 </p>
 
-                <!-- Stats / Skills Columns -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center lg:text-left">
-                    <!-- Stat 1 -->
-                    <div>
-                        <h3 class="text-2xl font-bold text-white mb-2">Front-End</h3>
-                        <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">60+ Hours Experience</p>
-                    </div>
-                    <!-- Stat 2 -->
-                    <div>
-                        <h3 class="text-2xl font-bold text-white mb-2">Python</h3>
-                        <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">4 Years Experience</p>
-                    </div>
-                    <!-- Stat 3 -->
-                    <div>
-                        <h3 class="text-2xl font-bold text-white mb-2">Machine Learning</h3>
-                        <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">120+ Hours Experience</p>
-                    </div>
+                <!-- Dynamic Experience Only -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-center lg:text-left">
+                    <% if(experience && experience.length > 0) { %>
+                        <% experience.slice(0, 3).forEach(exp => { %>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white mb-2"><%= exp.role %></h3>
+                                <p class="text-gray-500 text-sm uppercase tracking-wider border-b border-gray-700 inline-block pb-1">
+                                    <%= exp.company %> • <%= exp.current ? 'Current' : new Date(exp.endDate).getFullYear() %>
+                                </p>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="col-span-3">
+                            <p class="text-gray-500 italic">No experience entries yet.</p>
+                        </div>
+                    <% } %>
                 </div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- Education Section -->
+<section class="py-20 bg-[#0a0a0a]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center mb-12">
+            <h2 class="text-5xl font-extrabold text-gray-400 mr-8">education</h2>
+            <div class="h-1 bg-gray-700 flex-grow rounded-full"></div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <% if(education && education.length > 0) { %>
+                <% education.forEach(edu => { %>
+                    <div class="bg-[#1a1a1a] rounded-2xl p-6 hover:transform hover:-translate-y-2 transition-all duration-300 border border-gray-800">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-graduation-cap text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white"><%= edu.degree %></h3>
+                                <p class="text-green-400 text-sm"><%= edu.field %></p>
+                            </div>
+                        </div>
+                        <p class="text-gray-300 font-medium mb-2"><%= edu.institution %></p>
+                        <% if(edu.location) { %>
+                            <p class="text-gray-500 text-sm mb-2"><i class="fas fa-map-marker-alt mr-1"></i><%= edu.location %></p>
+                        <% } %>
+                        <p class="text-gray-400 text-sm mb-3">
+                            <%= new Date(edu.startDate).getFullYear() %> - <%= edu.current ? 'Present' : new Date(edu.endDate).getFullYear() %>
+                        </p>
+                        <% if(edu.grade) { %>
+                            <p class="text-yellow-400 text-sm font-medium mb-2"><i class="fas fa-award mr-1"></i><%= edu.grade %></p>
+                        <% } %>
+                        <% if(edu.description) { %>
+                            <p class="text-gray-400 text-sm line-clamp-3"><%= edu.description %></p>
+                        <% } %>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="col-span-3 text-center">
+                    <p class="text-gray-500 italic">No education entries yet.</p>
+                </div>
+            <% } %>
         </div>
     </div>
 </section>

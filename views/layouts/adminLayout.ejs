@@ -29,44 +29,50 @@
 
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0 hidden md:flex flex-col shadow-sm z-10">
+        <aside class="w-72 bg-white border-r border-gray-200 flex-shrink-0 hidden md:flex flex-col shadow-sm z-10">
             <div class="p-6 flex items-center justify-center border-b border-gray-100">
                 <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Admin<span class="text-blue-600">Panel</span></h1>
             </div>
             <nav class="flex-1 overflow-y-auto py-6">
                 <ul class="space-y-1 px-4">
                     <li>
-                        <a href="/admin/dashboard" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/dashboard' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                        <a href="/admin/dashboard" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/dashboard' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
                             <i class="fas fa-tachometer-alt w-6 text-center <%= path === '/dashboard' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
                             <span class="ml-3 font-medium">Dashboard</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/hero" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/hero' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                        <a href="/admin/hero" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/hero' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
                             <i class="fas fa-image w-6 text-center <%= path === '/hero' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
                             <span class="ml-3 font-medium">Hero Section</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/skills" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/skills' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                        <a href="/admin/skills" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/skills' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
                             <i class="fas fa-code w-6 text-center <%= path === '/skills' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
                             <span class="ml-3 font-medium">Skills</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/experience" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/experience' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                        <a href="/admin/experience" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/experience' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
                             <i class="fas fa-briefcase w-6 text-center <%= path === '/experience' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
                             <span class="ml-3 font-medium">Experience</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/projects" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/projects' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                        <a href="/admin/education" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/education' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                            <i class="fas fa-graduation-cap w-6 text-center <%= path === '/education' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
+                            <span class="ml-3 font-medium">Education</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/projects" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/projects' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
                             <i class="fas fa-project-diagram w-6 text-center <%= path === '/projects' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
                             <span class="ml-3 font-medium">Projects</span>
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/testimonials" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/testimonials' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
+                        <a href="/admin/testimonials" class="flex items-center p-3 rounded-xl transition-all duration-200 group <%= path === '/testimonials' ? 'bg-blue-50 text-blue-600 shadow-sm border-l-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' %>">
                             <i class="fas fa-comment-alt w-6 text-center <%= path === '/testimonials' ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600' %>"></i>
                             <span class="ml-3 font-medium">Testimonials</span>
                         </a>

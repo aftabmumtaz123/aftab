@@ -50,20 +50,20 @@
                 </div>
 
                 <div>
-                    <p class="text-sm text-white/80 mb-2 font-mono tracking-widest">**** **** **** <%= w._id.toString().slice(-4) %></p>
+                    <p class="text-sm text-white/80 mb-2 font-mono tracking-widest">**** **** **** <%= w._id.toString().slice(-4).toUpperCase() %></p>
                     <div class="mt-6 flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-500">Balance</p>
-                            <p class="text-xl font-bold text-gray-800"><%= w.currency %> <%= w.balance.toLocaleString() %></p>
+                            <p class="text-sm text-white">Balance</p>
+                            <p class="text-xl font-bold text-white"><%= w.currency %> <%= w.balance.toLocaleString() %></p>
                         </div>
                         <div class="flex gap-2">
-                            <a href="/admin/finance/wallets/<%= w._id %>" class="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors" title="View Details">
+                            <a href="/admin/finance/wallets/<%= w._id %>" class="text-gray-400 hover:text-blue-600 p-2 rounded-full transition-colors" title="View Details">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <a href="/admin/finance/wallets/edit/<%= w._id %>" class="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors" title="Edit">
+                            <a href="/admin/finance/wallets/edit/<%= w._id %>" class="text-gray-400 hover:text-yellow-600 p-2 rounded-full transition-colors" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="/admin/finance/wallets/delete/<%= w._id %>" onclick="return confirm('Are you sure? This will delete the wallet and all associated records.')" class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Delete">
+                            <a href="/admin/finance/wallets/delete/<%= w._id %>" onclick="return confirm('Are you sure? This will delete the wallet and all associated records.')" class="text-gray-400 hover:text-red-600 p-2 rounded-full transition-colors" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </div>

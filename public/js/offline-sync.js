@@ -54,22 +54,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // For now, let's use the bulk endpoint strategy.
             try {
-                const response = await fetch('/admin/finance/sync', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ changes: queue })
-                });
+                // Determine which sync endpoint to use based on the changes
+                const hasFinanceChanges = queue.some(item => item.url.includes('/finance'));
+                const hasAdminChanges = queue.some(item => !item.url.includes('/finance'));
 
-                if (response.ok) {
-                    await window.idb.clearSyncQueue();
-                    toast.success('Sync complete!');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    console.error('Sync failed');
-                    toast.error('Sync failed. Please try again.');
+                // Sync finance changes
+                if (hasFinanceChanges) {
+                    const financeChanges = queue.filter(item => item.url.includes('/finance'));
+                    const response = await fetch('/admin/finance/sync', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ changes: financeChanges })
+                    });
+
+                    if (!response.ok) {
+                        console.error('Finance sync failed');
+                        toast.error('Finance sync failed. Please try again.');
+                        return;
+                    }
                 }
+
+                // Sync admin changes
+                if (hasAdminChanges) {
+                    const adminChanges = queue.filter(item => !item.url.includes('/finance'));
+                    const response = await fetch('/admin/sync', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ changes: adminChanges })
+                    });
+
+                    if (!response.ok) {
+                        console.error('Admin sync failed');
+                        toast.error('Admin sync failed. Please try again.');
+                        return;
+                    }
+                }
+
+                // Clear queue if all syncs successful
+                await window.idb.clearSyncQueue();
+                toast.success('Sync complete!');
+                setTimeout(() => window.location.reload(), 1000);
             } catch (err) {
                 console.error('Network error during sync', err);
                 // Don't clear queue if network error

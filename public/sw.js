@@ -1,4 +1,4 @@
-const CACHE_NAME = 'portfolio-v3';
+const CACHE_NAME = 'portfolio-v4';
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',
@@ -6,20 +6,22 @@ const ASSETS_TO_CACHE = [
     '/images/icons/icon-512.png',
     '/js/idb-utility.js',
     '/js/offline-sync.js',
-    '/js/toast.js',
-    'https://cdn.tailwindcss.com',
-    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+    '/js/toast.js'
+    // Note: External CDN resources (Tailwind, Chart.js, FontAwesome, Google Fonts)
+    // are NOT cached to avoid CORS issues. They will be fetched from network.
 ];
 
 // Install Event
 self.addEventListener('install', event => {
+    console.log('Service Worker installing...');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('Opened cache');
                 return cache.addAll(ASSETS_TO_CACHE);
+            })
+            .catch(err => {
+                console.error('Cache install error:', err);
             })
     );
     self.skipWaiting();

@@ -301,7 +301,7 @@ router.get('/', async (req, res) => {
 router.get('/people', async (req, res) => {
     try {
         // Check Cache
-        if (redisClient.isOpen) {
+        if (redisClient.isReady) {
             const cachedPeople = await redisClient.get('finance:people');
             if (cachedPeople) {
                 console.log('Cache Hit: People');
@@ -314,27 +314,53 @@ router.get('/people', async (req, res) => {
         }
 
         console.log('Cache Miss: People');
-        const people = await Person.find().sort({ name: 1 });
-        // Calculate balances for each person
-        const peopleWithBalances = await Promise.all(people.map(async (p) => {
-            const payments = await Payment.find({ person: p._id });
-            let given = 0;
-            let received = 0;
-            payments.forEach(pay => {
-                if (pay.type === 'send') given += pay.amount;
-                else received += pay.amount;
-            });
-            return {
-                ...p.toObject(),
-                totalGiven: given,
-                totalReceived: received,
-                balance: received - given
-            };
-        }));
+        // Optimized: Use aggregation to calculate balances in one query
+        const peopleWithBalances = await Person.aggregate([
+            {
+                $lookup: {
+                    from: 'payments',
+                    localField: '_id',
+                    foreignField: 'person',
+                    as: 'payments'
+                }
+            },
+            {
+                $addFields: {
+                    totalGiven: {
+                        $sum: {
+                            $map: {
+                                input: { $filter: { input: '$payments', cond: { $eq: ['$$this.type', 'send'] } } },
+                                in: '$$this.amount'
+                            }
+                        }
+                    },
+                    totalReceived: {
+                        $sum: {
+                            $map: {
+                                input: { $filter: { input: '$payments', cond: { $eq: ['$$this.type', 'receive'] } } },
+                                in: '$$this.amount'
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    balance: { $subtract: ['$totalReceived', '$totalGiven'] }
+                }
+            },
+            { $sort: { name: 1 } },
+            { $project: { payments: 0 } } // Remove payments array from output
+        ]);
 
         // Set Cache (1 hour)
-        // Set Cache (1 hour)
-        if (redisClient.isOpen) await redisClient.set('finance:people', JSON.stringify(peopleWithBalances), { EX: 3600 });
+        if (redisClient.isReady) {
+            try {
+                await redisClient.set('finance:people', JSON.stringify(peopleWithBalances), { EX: 3600 });
+            } catch (err) {
+                console.log('Redis cache error:', err.message);
+            }
+        }
 
         res.render('admin/finance/people/list', {
             title: 'People',
@@ -667,7 +693,7 @@ router.get('/reports/export', async (req, res) => {
 router.get('/wallets', async (req, res) => {
     try {
         // Check Cache
-        if (redisClient.isOpen) {
+        if (redisClient.isReady) {
             const cachedWallets = await redisClient.get('finance:wallets');
             if (cachedWallets) {
                 console.log('Cache Hit: Wallets');
@@ -683,7 +709,13 @@ router.get('/wallets', async (req, res) => {
         const wallets = await Wallet.find().sort({ name: 1 });
 
         // Set Cache (1 hour)
-        if (redisClient.isOpen) await redisClient.set('finance:wallets', JSON.stringify(wallets), { EX: 3600 });
+        if (redisClient.isReady) {
+            try {
+                await redisClient.set('finance:wallets', JSON.stringify(wallets), { EX: 3600 });
+            } catch (err) {
+                console.log('Redis cache error:', err.message);
+            }
+        }
 
         res.render('admin/finance/wallets/list', {
             title: 'Wallets & Accounts',
@@ -848,7 +880,7 @@ router.get('/wallets/:id', async (req, res) => {
 router.get('/categories', async (req, res) => {
     try {
         // Check Cache
-        if (redisClient.isOpen) {
+        if (redisClient.isReady) {
             const cachedCategories = await redisClient.get('finance:categories');
             if (cachedCategories) {
                 console.log('Cache Hit: Categories');
@@ -864,7 +896,13 @@ router.get('/categories', async (req, res) => {
         const categories = await Category.find().sort({ type: 1, name: 1 });
 
         // Set Cache (1 hour)
-        if (redisClient.isOpen) await redisClient.set('finance:categories', JSON.stringify(categories), { EX: 3600 });
+        if (redisClient.isReady) {
+            try {
+                await redisClient.set('finance:categories', JSON.stringify(categories), { EX: 3600 });
+            } catch (err) {
+                console.log('Redis cache error:', err.message);
+            }
+        }
 
         res.render('admin/finance/categories/list', {
             title: 'Categories',

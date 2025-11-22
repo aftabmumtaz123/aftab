@@ -1,5 +1,5 @@
 const DB_NAME = 'portfolio-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'pending_changes';
 
 const idbUtility = {
@@ -13,8 +13,29 @@ const idbUtility = {
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
+
+                // Create main pending changes store if it doesn't exist
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
                     db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                }
+
+                // Create separate stores for different entity types (v2)
+                if (event.oldVersion < 2) {
+                    if (!db.objectStoreNames.contains('pending_projects')) {
+                        db.createObjectStore('pending_projects', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('pending_skills')) {
+                        db.createObjectStore('pending_skills', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('pending_experience')) {
+                        db.createObjectStore('pending_experience', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('pending_testimonials')) {
+                        db.createObjectStore('pending_testimonials', { keyPath: 'id', autoIncrement: true });
+                    }
+                    if (!db.objectStoreNames.contains('pending_config')) {
+                        db.createObjectStore('pending_config', { keyPath: 'id', autoIncrement: true });
+                    }
                 }
             };
         });

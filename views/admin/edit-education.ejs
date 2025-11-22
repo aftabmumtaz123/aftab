@@ -1,0 +1,94 @@
+<div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <a href="/admin/education" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-gray-800">Edit Education</h1>
+            </div>
+            <p class="text-gray-500 text-sm ml-7">Update education entry</p>
+        </div>
+    </div>
+
+    <form action="/admin/education/<%= education._id %>/edit" method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Main Info -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-graduation-cap text-blue-500"></i> Education Information
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Institution <span class="text-red-500">*</span></label>
+                            <input type="text" name="institution" value="<%= education.institution %>" required class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. Stanford University">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Degree <span class="text-red-500">*</span></label>
+                            <input type="text" name="degree" value="<%= education.degree %>" required class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. Bachelor of Science">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Field of Study <span class="text-red-500">*</span></label>
+                            <input type="text" name="field" value="<%= education.field %>" required class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. Computer Science">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                            <input type="text" name="location" value="<%= education.location || '' %>" class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. California, USA">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Grade/GPA</label>
+                        <input type="text" name="grade" value="<%= education.grade || '' %>" class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g. 3.8 GPA or First Class">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea name="description" rows="4" class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="Describe your achievements, coursework, activities..."><%= education.description || '' %></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Timeline & Actions -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Timeline Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-purple-500"></i> Timeline
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
+                        <input type="date" name="startDate" value="<%= education.startDate ? new Date(education.startDate).toISOString().split('T')[0] : '' %>" required class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input type="date" name="endDate" value="<%= education.endDate ? new Date(education.endDate).toISOString().split('T')[0] : '' %>" class="w-full border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <p class="text-xs text-gray-400 mt-1">Leave blank if currently studying</p>
+                    </div>
+
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <input type="checkbox" name="current" id="current" <%= education.current ? 'checked' : '' %> class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="current" class="ml-2 block text-sm text-gray-700 font-medium">Currently studying here</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Actions</h2>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-save"></i> Update Education
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

@@ -7,6 +7,7 @@ const Skill = require('../models/Skill');
 const Experience = require('../models/Experience');
 const Testimonial = require('../models/Testimonial');
 const HeroSection = require('../models/HeroSection');
+const Education = require('../models/Education');
 
 // Helper to render with user layout
 const renderUser = (res, view, data) => {
@@ -37,6 +38,8 @@ router.get('/', async (req, res) => {
         const projects = await Project.find().limit(6); // Featured projects
         const skills = await Skill.find().sort({ level: -1 });
         const testimonials = await Testimonial.find();
+        const experience = await Experience.find().sort({ startDate: -1 });
+        const education = await Education.find().sort({ startDate: -1 });
 
         renderUser(res, 'index', {
             title: config.homeTitle,
@@ -45,7 +48,9 @@ router.get('/', async (req, res) => {
             services,
             projects,
             skills,
-            testimonials
+            testimonials,
+            experience,
+            education
         });
     } catch (err) {
         console.error(err);
@@ -70,8 +75,9 @@ router.get('/resume', async (req, res) => {
         let config = await SiteConfig.findOne();
         const experience = await Experience.find().sort({ startDate: -1 });
         const skills = await Skill.find().sort({ level: -1 });
+        const education = await Education.find().sort({ startDate: -1 });
         const hero = await HeroSection.findOne(); // For resume link
-        renderUser(res, 'resume', { title: 'Resume', config, experience, skills, hero });
+        renderUser(res, 'resume', { title: 'Resume', config, experience, skills, education, hero });
     } catch (err) {
         res.status(500).send('Server Error');
     }
@@ -83,6 +89,7 @@ router.get('/resume/print', async (req, res) => {
         let config = await SiteConfig.findOne();
         const experience = await Experience.find().sort({ startDate: -1 });
         const skills = await Skill.find().sort({ level: -1 });
+        const education = await Education.find().sort({ startDate: -1 });
         const hero = await HeroSection.findOne();
 
         // Render without the main layout, as it's a standalone print view
@@ -91,6 +98,7 @@ router.get('/resume/print', async (req, res) => {
             config,
             experience,
             skills,
+            education,
             hero
         });
     } catch (err) {

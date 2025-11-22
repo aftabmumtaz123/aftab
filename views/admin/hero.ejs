@@ -1,32 +1,225 @@
-<div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-2xl font-bold mb-6">Manage Hero Section</h2>
-    <form action="/admin/hero" method="POST" enctype="multipart/form-data" class="space-y-4">
-        <div>
-            <label class="block text-gray-700 font-medium mb-2">Title</label>
-            <input type="text" name="title" value="<%= hero.title %>" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-            <label class="block text-gray-700 font-medium mb-2">Subtitle</label>
-            <input type="text" name="subtitle" value="<%= hero.subtitle %>" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-            <label class="block text-gray-700 font-medium mb-2">Description</label>
-            <textarea name="description" rows="4" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500"><%= hero.description %></textarea>
-        </div>
-        <div>
-            <label class="block text-gray-700 font-medium mb-2">Resume Link</label>
-            <input type="text" name="resumeLink" value="<%= hero.resumeLink %>" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-            <label class="block text-gray-700 font-medium mb-2">Background Image</label>
-            <input type="file" name="backgroundImage" class="w-full border border-gray-300 rounded px-4 py-2">
-            <% if(hero.backgroundImage) { %>
-                <div class="mt-2">
-                    <p class="text-sm text-gray-500">Current Image:</p>
-                    <img src="<%= hero.backgroundImage %>" alt="Hero" class="h-32 object-cover rounded">
+<div id="heroPreview" class="min-h-screen">
+    <!-- Preview Mode (Default) -->
+    <div class="flex justify-end mb-6">
+        <button onclick="toggleEditMode()" class="bg-gradient-to-r from-teal-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl hover:from-teal-700 hover:to-purple-700 transition-all duration-300 flex items-center">
+            <i class="fas fa-edit mr-2"></i>
+            Edit Hero Section
+        </button>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl shadow-2xl overflow-hidden border border-gray-700 mb-6">
+        <div class="p-12 md:p-16 lg:p-20">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <!-- Left Content -->
+                    <div class="text-white">
+                        <h1 class="text-5xl lg:text-7xl font-extrabold mb-4 tracking-tight">
+                            <%= hero.title || 'Your Name' %>
+                        </h1>
+                        <p class="text-2xl lg:text-3xl text-gray-300 font-medium mb-6">
+                            <%= hero.subtitle || 'Backend Engineer | Node.js & Scalable Systems' %>
+                        </p>
+                        <p class="text-lg text-gray-400 leading-relaxed mb-8">
+                            <%= hero.description || 'Self-taught backend developer passionate about building robust, scalable web applications.' %>
+                        </p>
+                        <div class="flex gap-4">
+                            <a href="#" class="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                                View Projects ↓
+                            </a>
+                            <a href="#" class="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors">
+                                Contact Me
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Right Image -->
+                    <div class="flex justify-center lg:justify-end">
+                        <div class="w-72 h-72 rounded-full overflow-hidden border-4 border-white shadow-2xl">
+                            <% if(hero.backgroundImage) { %>
+                                <img src="<%= hero.backgroundImage %>" alt="Profile" class="w-full h-full object-cover">
+                            <% } else { %>
+                                <div class="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400">
+                                    <i class="fas fa-user text-6xl"></i>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
                 </div>
-            <% } %>
+            </div>
         </div>
-        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save Changes</button>
-    </form>
+    </div>
+
+    <p class="text-center text-gray-500 text-sm italic">
+        <i class="fas fa-info-circle mr-1"></i>
+        This is how visitors see your hero section
+    </p>
 </div>
+
+<!-- Edit Mode (Hidden by default) -->
+<div id="heroEdit" class="hidden min-h-screen">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Edit Hero Section</h2>
+        <button onclick="toggleEditMode()" class="text-gray-600 hover:text-gray-800 font-medium flex items-center">
+            <i class="fas fa-times mr-2"></i>
+            Cancel
+        </button>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+            <form action="/admin/hero" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <!-- Title -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Full Name</label>
+                    <input type="text" name="title" value="<%= hero.title %>" 
+                           class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors text-lg font-medium"
+                           placeholder="e.g., Aftab Manzoor">
+                    <p class="text-sm text-gray-500 mt-1">This will be displayed as your main heading</p>
+                </div>
+
+                <!-- Subtitle -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Subtitle / Tagline</label>
+                    <input type="text" name="subtitle" value="<%= hero.subtitle %>" 
+                           class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                           placeholder="e.g., Backend Engineer | Node.js • MongoDB • System Design">
+                    <p class="text-sm text-gray-500 mt-1">Your professional title and key skills</p>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Description</label>
+                    <textarea name="description" id="heroDescription" rows="4" maxlength="180"
+                              class="w-full border-2 border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                              placeholder="Self-taught backend developer passionate about building robust, scalable web applications..."><%= hero.description %></textarea>
+                    <div class="flex justify-between items-center mt-1">
+                        <p class="text-sm text-gray-500">Keep it concise and impactful (3-4 lines max)</p>
+                        <span id="charCount" class="text-sm font-medium text-gray-600">0 / 180</span>
+                    </div>
+                </div>
+
+                <!-- Resume Link -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Resume Link</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="resumeLink" value="<%= hero.resumeLink %>" 
+                               class="flex-1 border-2 border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                               placeholder="https://...">
+                        <% if(hero.resumeLink) { %>
+                            <a href="<%= hero.resumeLink %>" target="_blank" class="bg-gray-100 hover:bg-gray-200 px-4 py-3 rounded-lg transition-colors flex items-center">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Profile Photo -->
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Profile Photo</label>
+                    <div class="flex items-center gap-6">
+                        <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-200">
+                            <% if(hero.backgroundImage) { %>
+                                <img src="<%= hero.backgroundImage %>" alt="Profile" class="w-full h-full object-cover" id="photoPreview">
+                            <% } else { %>
+                                <div class="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400" id="photoPreview">
+                                    <i class="fas fa-user text-4xl"></i>
+                                </div>
+                            <% } %>
+                        </div>
+                        <div>
+                            <input type="file" name="backgroundImage" id="photoInput" accept="image/*" class="hidden">
+                            <button type="button" onclick="document.getElementById('photoInput').click()" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                                <i class="fas fa-camera mr-2"></i>
+                                Change Photo
+                            </button>
+                            <p class="text-sm text-gray-500 mt-2">Recommended: 512x512px minimum</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 pt-6 border-t border-gray-200">
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-teal-600 to-purple-600 hover:from-teal-700 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300">
+                        <i class="fas fa-save mr-2"></i>
+                        Save Changes
+                    </button>
+                    <button type="button" onclick="toggleEditMode()" class="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle between preview and edit mode
+    function toggleEditMode() {
+        const preview = document.getElementById('heroPreview');
+        const edit = document.getElementById('heroEdit');
+        
+        if (preview.classList.contains('hidden')) {
+            // Show preview, hide edit
+            preview.classList.remove('hidden');
+            edit.classList.add('hidden');
+            preview.style.animation = 'fadeIn 0.3s ease-in';
+        } else {
+            // Show edit, hide preview
+            preview.classList.add('hidden');
+            edit.classList.remove('hidden');
+            edit.style.animation = 'slideUp 0.3s ease-out';
+        }
+    }
+
+    // Character counter
+    const descriptionField = document.getElementById('heroDescription');
+    const charCount = document.getElementById('charCount');
+    
+    function updateCharCount() {
+        const length = descriptionField.value.length;
+        charCount.textContent = `${length} / 180`;
+        if (length > 160) {
+            charCount.classList.add('text-orange-600');
+        } else {
+            charCount.classList.remove('text-orange-600');
+        }
+    }
+    
+    if (descriptionField) {
+        descriptionField.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initial count
+    }
+
+    // Photo preview
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    
+    if (photoInput) {
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoPreview.innerHTML = `<img src="${e.target.result}" alt="Preview" class="w-full h-full object-cover">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
