@@ -1,4 +1,4 @@
-const CACHE_NAME = 'portfolio-v2';
+const CACHE_NAME = 'portfolio-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',
@@ -6,9 +6,11 @@ const ASSETS_TO_CACHE = [
     '/images/icons/icon-512.png',
     '/js/idb-utility.js',
     '/js/offline-sync.js',
+    '/js/toast.js',
     'https://cdn.tailwindcss.com',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap'
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
 ];
 
 // Install Event
@@ -44,8 +46,20 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
 
-    // 1. API / Data requests (Skip caching for now, handled by sync logic or live fetch)
-    if (requestUrl.pathname.startsWith('/api/')) {
+    // 1. API GET requests (Stale-while-revalidate)
+    // We only cache GET requests to the finance API to show data offline
+    if (requestUrl.pathname.startsWith('/admin/finance') && event.request.method === 'GET') {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(cache => {
+                return cache.match(event.request).then(cachedResponse => {
+                    const fetchPromise = fetch(event.request).then(networkResponse => {
+                        cache.put(event.request, networkResponse.clone());
+                        return networkResponse;
+                    });
+                    return cachedResponse || fetchPromise;
+                });
+            })
+        );
         return;
     }
 
@@ -73,8 +87,8 @@ self.addEventListener('fetch', event => {
                             if (response) {
                                 return response;
                             }
-                            // Fallback page could go here
-                            return caches.match('/');
+                            // Fallback to dashboard if specific page not found
+                            return caches.match('/admin/finance');
                         });
                 })
         );
@@ -94,8 +108,7 @@ self.addEventListener('fetch', event => {
                         if (!response || response.status !== 200 || response.type !== 'basic') {
                             return response;
                         }
-                        // Don't cache external resources aggressively if not in whitelist, but for now we cache everything visited
-                        // Actually, let's only cache local assets dynamically
+                        // Cache local assets dynamically
                         if (requestUrl.origin === location.origin) {
                             const responseToCache = response.clone();
                             caches.open(CACHE_NAME)

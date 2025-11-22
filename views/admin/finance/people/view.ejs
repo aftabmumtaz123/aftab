@@ -1,0 +1,135 @@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Person Profile Card -->
+    <div class="lg:col-span-1">
+        <div class="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 relative overflow-hidden mb-6">
+            <div class="flex flex-col items-center text-center relative z-10">
+                <div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4 text-4xl text-gray-400 border-4 border-white shadow-sm">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800"><%= person.name %></h2>
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 mt-2"><%= person.type %></span>
+                
+                <div class="w-full mt-6 pt-6 border-t border-gray-100">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 uppercase tracking-wider">Given</p>
+                            <p class="text-lg font-bold text-red-600">Rs <%= stats.totalGiven.toLocaleString() %></p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs text-gray-500 uppercase tracking-wider">Received</p>
+                            <p class="text-lg font-bold text-green-600">Rs <%= stats.totalReceived.toLocaleString() %></p>
+                        </div>
+                    </div>
+                    <div class="mt-6 bg-gray-50 rounded-xl p-4">
+                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Net Balance</p>
+                        <p class="text-3xl font-bold <%= stats.balance < 0 ? 'text-green-600' : stats.balance > 0 ? 'text-red-600' : 'text-gray-600' %>">
+                            <%= stats.balance < 0 ? '+' : '' %> Rs <%= Math.abs(stats.balance).toLocaleString() %>
+                        </p>
+                        <p class="text-xs mt-2 <%= stats.balance < 0 ? 'text-green-600' : stats.balance > 0 ? 'text-red-600' : 'text-gray-500' %>">
+                            <%= stats.balance < 0 ? 'You are owed' : stats.balance > 0 ? 'You have to pay' : 'Settled' %>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="w-full mt-6 space-y-3 text-left">
+                    <% if (person.phone) { %>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-phone w-6 text-center text-gray-400"></i>
+                            <span><%= person.phone %></span>
+                        </div>
+                    <% } %>
+                    <% if (person.email) { %>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-envelope w-6 text-center text-gray-400"></i>
+                            <span><%= person.email %></span>
+                        </div>
+                    <% } %>
+                    <% if (person.address) { %>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <i class="fas fa-map-marker-alt w-6 text-center text-gray-400"></i>
+                            <span><%= person.address %></span>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h4 class="font-bold text-gray-800 mb-3">Actions</h4>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="/admin/finance/payments/add?person=<%= person._id %>&type=send" class="flex flex-col items-center justify-center p-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                    <i class="fas fa-arrow-up mb-1"></i>
+                    <span class="text-xs font-medium">Pay</span>
+                </a>
+                <a href="/admin/finance/payments/add?person=<%= person._id %>&type=receive" class="flex flex-col items-center justify-center p-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                    <i class="fas fa-arrow-down mb-1"></i>
+                    <span class="text-xs font-medium">Receive</span>
+                </a>
+                <a href="/admin/finance/people/edit/<%= person._id %>" class="flex flex-col items-center justify-center p-3 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-edit mb-1"></i>
+                    <span class="text-xs font-medium">Edit Profile</span>
+                </a>
+                <a href="/admin/finance/people/delete/<%= person._id %>" onclick="return confirm('Delete this person?')" class="flex flex-col items-center justify-center p-3 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-trash mb-1"></i>
+                    <span class="text-xs font-medium">Delete</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="lg:col-span-2">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800">Transaction History</h3>
+                <span class="text-xs text-gray-500"><%= payments.length %> records</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-500 font-medium">
+                        <tr>
+                            <th class="px-6 py-3">Date</th>
+                            <th class="px-6 py-3">Type</th>
+                            <th class="px-6 py-3">Wallet</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <% payments.forEach(p => { %>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 text-gray-500">
+                                    <%= new Date(p.date).toLocaleDateString() %>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium <%= p.type === 'send' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600' %>">
+                                        <%= p.type === 'send' ? 'Given' : 'Received' %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-600">
+                                    <%= p.wallet ? p.wallet.name : '-' %>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium <%= p.status === 'Completed' ? 'bg-blue-100 text-blue-600' : 'bg-yellow-100 text-yellow-600' %>">
+                                        <%= p.status %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-right font-bold <%= p.type === 'send' ? 'text-red-600' : 'text-green-600' %>">
+                                    <%= p.type === 'send' ? '-' : '+' %> Rs <%= p.amount.toLocaleString() %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                        <% if (payments.length === 0) { %>
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                    No transactions recorded with this person.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

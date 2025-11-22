@@ -1,8 +1,13 @@
 <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Wallets & Accounts</h1>
-    <a href="/admin/finance/wallets/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-        <i class="fas fa-plus mr-2"></i> Add Wallet
-    </a>
+    <h2 class="text-2xl font-bold text-gray-800">Wallets & Accounts</h2>
+    <div class="flex gap-3">
+        <a href="/admin/finance/wallets/transfer" class="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-sm">
+            <i class="fas fa-exchange-alt mr-2"></i> Transfer
+        </a>
+        <a href="/admin/finance/wallets/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-md">
+            <i class="fas fa-plus mr-2"></i> Add Wallet
+        </a>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
@@ -46,11 +51,21 @@
 
                 <div>
                     <p class="text-sm text-white/80 mb-2 font-mono tracking-widest">**** **** **** <%= w._id.toString().slice(-4) %></p>
-                    <div class="flex justify-between items-end">
-                        <h3 class="text-3xl font-bold tracking-tight shadow-black drop-shadow-md"><%= w.currency %> <%= w.balance.toLocaleString() %></h3>
-                        <div class="flex flex-col items-end">
-                            <span class="text-[10px] text-white/60 uppercase">Valid Thru</span>
-                            <span class="text-xs font-mono">12/28</span>
+                    <div class="mt-6 flex justify-between items-center">
+                        <div>
+                            <p class="text-sm text-gray-500">Balance</p>
+                            <p class="text-xl font-bold text-gray-800"><%= w.currency %> <%= w.balance.toLocaleString() %></p>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/admin/finance/wallets/<%= w._id %>" class="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="/admin/finance/wallets/edit/<%= w._id %>" class="text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full transition-colors" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="/admin/finance/wallets/delete/<%= w._id %>" onclick="return confirm('Are you sure? This will delete the wallet and all associated records.')" class="text-gray-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
                         </div>
                     </div>
                 </div>

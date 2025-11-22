@@ -1,104 +1,77 @@
-const dbName = 'PortfolioDB';
-const dbVersion = 2; // Incremented version
-const storeName = 'portfolioStore';
-const syncStoreName = 'syncQueue';
+const DB_NAME = 'portfolio-db';
+const DB_VERSION = 1;
+const STORE_NAME = 'pending_changes';
 
-const idb = {
+const idbUtility = {
     openDB: () => {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(dbName, dbVersion);
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onerror = (event) => reject('IndexedDB error: ' + event.target.error);
+
+            request.onsuccess = (event) => resolve(event.target.result);
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                if (!db.objectStoreNames.contains(storeName)) {
-                    db.createObjectStore(storeName, { keyPath: 'id' });
-                }
-                if (!db.objectStoreNames.contains(syncStoreName)) {
-                    db.createObjectStore(syncStoreName, { keyPath: 'id', autoIncrement: true });
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
                 }
             };
-
-            request.onsuccess = (event) => {
-                resolve(event.target.result);
-            };
-
-            request.onerror = (event) => {
-                reject('IndexedDB error: ' + event.target.errorCode);
-            };
         });
     },
 
-    // --- General Data Methods ---
-    saveData: (id, data) => {
-        return idb.openDB().then(db => {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readwrite');
-                const store = transaction.objectStore(storeName);
-                const request = store.put({ id, data, timestamp: Date.now() });
-
-                request.onsuccess = () => resolve('Data saved');
-                request.onerror = (e) => reject('Error saving data: ' + e.target.error);
+    addToSyncQueue: async (url, method, body) => {
+        const db = await idbUtility.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.add({
+                url,
+                method,
+                body,
+                timestamp: Date.now()
             });
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
         });
     },
 
-    getData: (id) => {
-        return idb.openDB().then(db => {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([storeName], 'readonly');
-                const store = transaction.objectStore(storeName);
-                const request = store.get(id);
+    getSyncQueue: async () => {
+        const db = await idbUtility.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
 
-                request.onsuccess = (event) => {
-                    resolve(event.target.result ? event.target.result.data : null);
-                };
-                request.onerror = (e) => reject('Error getting data: ' + e.target.error);
-            });
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
         });
     },
 
-    // --- Sync Queue Methods ---
-    addToSyncQueue: (url, method, body) => {
-        return idb.openDB().then(db => {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([syncStoreName], 'readwrite');
-                const store = transaction.objectStore(syncStoreName);
-                const request = store.add({ url, method, body, timestamp: Date.now() });
+    removeFromSyncQueue: async (id) => {
+        const db = await idbUtility.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(id);
 
-                request.onsuccess = () => resolve('Added to sync queue');
-                request.onerror = (e) => reject('Error adding to sync queue: ' + e.target.error);
-            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
         });
     },
 
-    getSyncQueue: () => {
-        return idb.openDB().then(db => {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([syncStoreName], 'readonly');
-                const store = transaction.objectStore(syncStoreName);
-                const request = store.getAll();
+    clearSyncQueue: async () => {
+        const db = await idbUtility.openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.clear();
 
-                request.onsuccess = (event) => {
-                    resolve(event.target.result);
-                };
-                request.onerror = (e) => reject('Error getting sync queue: ' + e.target.error);
-            });
-        });
-    },
-
-    removeFromSyncQueue: (id) => {
-        return idb.openDB().then(db => {
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([syncStoreName], 'readwrite');
-                const store = transaction.objectStore(syncStoreName);
-                const request = store.delete(id);
-
-                request.onsuccess = () => resolve('Removed from sync queue');
-                request.onerror = (e) => reject('Error removing from sync queue: ' + e.target.error);
-            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
         });
     }
 };
 
-// Expose to window
-window.idb = idb;
+window.idb = idbUtility;

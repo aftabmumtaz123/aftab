@@ -1,25 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'offline-status';
-    statusDiv.className = 'fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 transform translate-y-20 opacity-0 z-50';
-    document.body.appendChild(statusDiv);
-
-    const showStatus = (message, type = 'info') => {
-        statusDiv.textContent = message;
-        statusDiv.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 z-50 ${type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600'}`;
-        statusDiv.classList.remove('translate-y-20', 'opacity-0');
-
-        setTimeout(() => {
-            statusDiv.classList.add('translate-y-20', 'opacity-0');
-        }, 3000);
-    };
-
     const updateOnlineStatus = () => {
         if (navigator.onLine) {
-            showStatus('You are back online! Syncing...', 'success');
+            toast.success('You are back online! Syncing...');
             syncData();
         } else {
-            showStatus('You are offline. Changes will be saved locally.', 'info');
+            toast.info('You are offline. Changes will be saved locally.');
         }
     };
 
@@ -27,7 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('offline', updateOnlineStatus);
 
     // Intercept Forms
-    const forms = document.querySelectorAll('form');
+    // Only target forms specifically marked for offline support
+    const forms = document.querySelectorAll('form.offline-form');
     forms.forEach(form => {
         form.addEventListener('submit', async (e) => {
             if (!navigator.onLine) {
@@ -41,11 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     await window.idb.addToSyncQueue(url, method, data);
-                    showStatus('Saved offline! Will sync when online.', 'success');
+                    toast.success('Saved offline! Will sync when online.');
                     form.reset();
+
+                    // Optional: Optimistic UI update could go here
+                    // For now, we just reset the form
                 } catch (err) {
                     console.error(err);
-                    showStatus('Error saving offline data.', 'error');
+                    toast.error('Error saving offline data.');
                 }
             }
         });
@@ -57,30 +46,33 @@ document.addEventListener('DOMContentLoaded', () => {
             const queue = await window.idb.getSyncQueue();
             if (queue.length === 0) return;
 
-            for (const item of queue) {
-                try {
-                    const response = await fetch(item.url, {
-                        method: item.method,
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(item.body)
-                    });
+            // We'll send all changes in one bulk request if possible, 
+            // or iterate. The plan mentioned "Bulk updates" or "Iterate".
+            // Let's stick to the existing iteration logic for now, but we can also implement a bulk endpoint.
+            // The plan said "Backend Sync: Implement POST /admin/finance/sync for bulk updates".
+            // So let's try to send them all at once if we implement that endpoint.
 
-                    if (response.ok) {
-                        await window.idb.removeFromSyncQueue(item.id);
-                    } else {
-                        console.error('Sync failed for item', item.id);
-                    }
-                } catch (err) {
-                    console.error('Network error during sync', err);
+            // For now, let's use the bulk endpoint strategy.
+            try {
+                const response = await fetch('/admin/finance/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ changes: queue })
+                });
+
+                if (response.ok) {
+                    await window.idb.clearSyncQueue();
+                    toast.success('Sync complete!');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    console.error('Sync failed');
+                    toast.error('Sync failed. Please try again.');
                 }
-            }
-
-            // Reload to show new data if we synced something
-            if (queue.length > 0) {
-                showStatus('Sync complete!', 'success');
-                setTimeout(() => window.location.reload(), 1000);
+            } catch (err) {
+                console.error('Network error during sync', err);
+                // Don't clear queue if network error
             }
         } catch (err) {
             console.error('Error accessing sync queue', err);

@@ -1,142 +1,419 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Net Worth (Total Wallet Balance) -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <p class="text-gray-500 text-sm font-medium">Net Worth</p>
-        <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= summary.totalWalletBalance.toLocaleString() %></h3>
-        <p class="text-xs text-green-600 mt-2 flex items-center">
-            <i class="fas fa-circle mr-1" style="font-size: 6px;"></i> Across all wallets
-        </p>
+<div class="animate-fade-in">
+    <!-- Header & Quick Actions -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Finance Overview</h2>
+            <p class="text-gray-500 text-sm">Track your wealth and spending habits</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="/admin/finance/expenses/add" class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all shadow-sm hover:shadow-md text-sm font-medium">
+                <i class="fas fa-minus mr-2"></i> Expense
+            </a>
+            <a href="/admin/finance/income/add" class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md text-sm font-medium">
+                <i class="fas fa-plus mr-2"></i> Income
+            </a>
+            <a href="/admin/finance/wallets/add" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md text-sm font-medium">
+                <i class="fas fa-wallet mr-2"></i> Wallet
+            </a>
+        </div>
     </div>
 
-    <!-- Total Income -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <p class="text-gray-500 text-sm font-medium">Total Income</p>
-        <h3 class="text-2xl font-bold text-green-600 mt-1">Rs <%= summary.totalIncome.toLocaleString() %></h3>
-        <p class="text-xs text-gray-400 mt-2">Lifetime earnings</p>
-    </div>
-
-    <!-- Total Expenses -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <p class="text-gray-500 text-sm font-medium">Total Expenses</p>
-        <h3 class="text-2xl font-bold text-red-600 mt-1">Rs <%= summary.totalExpenses.toLocaleString() %></h3>
-        <p class="text-xs text-gray-400 mt-2">Lifetime spending</p>
-    </div>
-
-    <!-- Pending Receive -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <p class="text-gray-500 text-sm font-medium">Pending to Receive</p>
-        <h3 class="text-2xl font-bold text-blue-600 mt-1">Rs <%= summary.pendingToReceive.toLocaleString() %></h3>
-        <p class="text-xs text-orange-500 mt-2 flex items-center">
-            <i class="fas fa-circle mr-1" style="font-size: 6px;"></i> <%= summary.pendingToSend.toLocaleString() %> to pay
-        </p>
-    </div>
-</div>
-
-<!-- Wallets Section (ATM Cards) -->
-<div class="mb-8">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold text-gray-800">My Wallets</h3>
-        <a href="/admin/finance/wallets" class="text-blue-600 text-sm font-medium hover:underline">View All</a>
-    </div>
-    
-    <div class="flex gap-6 overflow-x-auto pb-6 custom-scrollbar snap-x">
-        <!-- Add New Wallet Card -->
-        <a href="/admin/finance/wallets/add" class="flex-shrink-0 w-80 h-48 bg-white border-2 border-dashed border-gray-300 rounded-3xl flex flex-col items-center justify-center text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-all snap-center group">
-            <div class="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center mb-3 transition-colors">
-                <i class="fas fa-plus text-xl"></i>
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Net Worth -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10">
+                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Net Worth</p>
+                <h3 class="text-2xl font-bold text-gray-900 mt-2">Rs <%= summary.totalWalletBalance.toLocaleString() %></h3>
+                <p class="text-xs text-blue-600 mt-2 flex items-center font-medium">
+                    <i class="fas fa-wallet mr-1"></i> Across all wallets
+                </p>
             </div>
-            <span class="font-bold">Add New Wallet</span>
-        </a>
+        </div>
 
-        <% wallets.forEach((w, index) => { %>
-            <!-- Wallet Card -->
-            <div class="flex-shrink-0 w-80 h-48 rounded-3xl p-6 text-white relative overflow-hidden shadow-lg snap-center transform hover:-translate-y-1 transition-all duration-300" 
-                 style="background: linear-gradient(135deg, <%= w.color || '#3b82f6' %> 0%, <%= w.color ? w.color + 'dd' : '#1d4ed8' %> 100%);">
-                
-                <!-- Background Pattern -->
-                <div class="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-                <div class="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
-                
-                <div class="relative z-10 flex flex-col h-full justify-between">
-                    <div class="flex justify-between items-start">
-                        <div class="flex flex-col">
-                            <span class="text-white/80 text-xs font-medium tracking-wider uppercase"><%= w.type %></span>
-                            <h4 class="font-bold text-lg tracking-wide"><%= w.name %></h4>
-                        </div>
-                        <i class="fas fa-wifi text-white/50 rotate-90"></i>
-                    </div>
+        <!-- Total Income -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10">
+                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Income</p>
+                <h3 class="text-2xl font-bold text-green-600 mt-2">Rs <%= summary.totalIncome.toLocaleString() %></h3>
+                <p class="text-xs text-gray-400 mt-2">Lifetime earnings</p>
+            </div>
+        </div>
 
-                    <div class="flex items-center gap-3 my-2">
-                        <div class="w-10 h-7 bg-yellow-200/80 rounded flex items-center justify-center overflow-hidden relative">
-                            <div class="absolute w-full h-[1px] bg-black/20 top-1/3"></div>
-                            <div class="absolute w-full h-[1px] bg-black/20 bottom-1/3"></div>
-                            <div class="absolute h-full w-[1px] bg-black/20 left-1/3"></div>
-                            <div class="absolute h-full w-[1px] bg-black/20 right-1/3"></div>
-                        </div>
-                        <i class="fas fa-rss text-xl text-white/80 rotate-90"></i>
-                    </div>
+        <!-- Total Expenses -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10">
+                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Expenses</p>
+                <h3 class="text-2xl font-bold text-red-600 mt-2">Rs <%= summary.totalExpenses.toLocaleString() %></h3>
+                <p class="text-xs text-gray-400 mt-2">Lifetime spending</p>
+            </div>
+        </div>
 
+        <!-- Pending -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+            <div class="relative z-10">
+                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Pending</p>
+                <div class="flex justify-between items-end mt-2">
                     <div>
-                        <p class="text-xs text-white/80 mb-1 font-mono">**** **** **** <%= w._id.toString().slice(-4) %></p>
-                        <div class="flex justify-between items-end">
-                            <h3 class="text-2xl font-bold tracking-tight"><%= w.currency %> <%= w.balance.toLocaleString() %></h3>
-                            <div class="flex flex-col items-end">
-                                <span class="text-[10px] text-white/60 uppercase">Valid Thru</span>
-                                <span class="text-xs font-mono">12/28</span>
-                            </div>
-                        </div>
+                        <span class="text-xs text-gray-400 block">To Receive</span>
+                        <span class="text-lg font-bold text-blue-600">Rs <%= summary.pendingToReceive.toLocaleString() %></span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-gray-400 block">To Pay</span>
+                        <span class="text-lg font-bold text-orange-500">Rs <%= summary.pendingToSend.toLocaleString() %></span>
                     </div>
                 </div>
             </div>
-        <% }) %>
+        </div>
+    </div>
+
+    <!-- Health Score & People Summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Financial Health Score -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800">Financial Health Score</h3>
+                <span class="px-3 py-1 rounded-full text-xs font-bold <%= healthScore >= 80 ? 'bg-green-100 text-green-700' : healthScore >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700' %>">
+                    <%= healthScore >= 80 ? 'Excellent' : healthScore >= 50 ? 'Good' : 'Needs Attention' %>
+                </span>
+            </div>
+            <div class="flex items-center gap-8">
+                <div class="relative w-32 h-32 flex-shrink-0">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="64" cy="64" r="56" stroke="#f3f4f6" stroke-width="12" fill="none"></circle>
+                        <circle cx="64" cy="64" r="56" stroke="<%= healthScore >= 80 ? '#22c55e' : healthScore >= 50 ? '#eab308' : '#ef4444' %>" stroke-width="12" fill="none" stroke-dasharray="351.86" stroke-dashoffset="<%= 351.86 - (351.86 * healthScore / 100) %>" class="transition-all duration-1000 ease-out"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center flex-col">
+                        <span class="text-3xl font-bold text-gray-800"><%= healthScore %></span>
+                        <span class="text-xs text-gray-400">/ 100</span>
+                    </div>
+                </div>
+                <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Savings Rate</p>
+                        <p class="font-bold text-gray-800"><%= summary.totalIncome > 0 ? Math.round(((summary.totalIncome - summary.totalExpenses) / summary.totalIncome) * 100) : 0 %>%</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Debt Free</p>
+                        <p class="font-bold text-gray-800"><%= summary.pendingToSend === 0 ? 'Yes' : 'No' %></p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500 mb-1">Net Positive</p>
+                        <p class="font-bold text-gray-800"><%= summary.totalWalletBalance > 0 ? 'Yes' : 'No' %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- People Summary -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800">People</h3>
+                <a href="/admin/finance/people" class="text-blue-600 text-xs font-medium hover:underline">View All</a>
+            </div>
+            <div class="text-center mb-6">
+                <h4 class="text-3xl font-bold text-gray-800"><%= peopleSummary.total %></h4>
+                <p class="text-xs text-gray-500">Total Contacts</p>
+            </div>
+            <div class="space-y-3">
+                <% 
+                const types = ['Friend', 'Family', 'Business', 'Other'];
+                types.forEach(type => {
+                    const count = peopleSummary.breakdown.find(p => p._id === type)?.count || 0;
+                    if (count > 0) {
+                %>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-gray-600 flex items-center">
+                        <i class="fas fa-circle text-[6px] mr-2 <%= type === 'Friend' ? 'text-blue-400' : type === 'Family' ? 'text-purple-400' : 'text-gray-400' %>"></i>
+                        <%= type %>
+                    </span>
+                    <span class="font-medium text-gray-900"><%= count %></span>
+                </div>
+                <% } }) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Income vs Expense Chart -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 lg:col-span-2">
+            <h3 class="font-bold text-gray-800 mb-4">Income vs Expense</h3>
+            <div class="h-64">
+                <canvas id="incomeExpenseChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Wallet Distribution -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            <h3 class="font-bold text-gray-800 mb-4">Wallet Distribution</h3>
+            <div class="h-64">
+                <canvas id="walletChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Category Spending (Full width on mobile, span 3 on large if needed, or just keep in flow) -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100 lg:col-span-3">
+            <h3 class="font-bold text-gray-800 mb-4">Top Spending Categories</h3>
+            <div class="h-64">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Payments & Wallets Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Upcoming Payments -->
+        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800">Upcoming Payments</h3>
+                <a href="/admin/finance/expenses" class="text-blue-600 text-xs font-medium hover:underline">View All</a>
+            </div>
+            <% if (upcomingPayments.length > 0) { %>
+                <div class="space-y-4">
+                    <% upcomingPayments.forEach(payment => { 
+                        const daysLeft = Math.ceil((new Date(payment.nextDueDate) - new Date()) / (1000 * 60 * 60 * 24));
+                        const isOverdue = daysLeft < 0;
+                        const isUrgent = daysLeft <= 3;
+                    %>
+                    <div class="flex items-center justify-between p-3 rounded-lg <%= isOverdue ? 'bg-red-50' : isUrgent ? 'bg-orange-50' : 'bg-gray-50' %>">
+                        <div>
+                            <p class="font-medium text-gray-900 text-sm"><%= payment.title %></p>
+                            <p class="text-xs <%= isOverdue ? 'text-red-600' : isUrgent ? 'text-orange-600' : 'text-gray-500' %>">
+                                <%= isOverdue ? 'Overdue ' + Math.abs(daysLeft) + ' days' : 'Due in ' + daysLeft + ' days' %>
+                            </p>
+                        </div>
+                        <span class="font-bold text-gray-800 text-sm">Rs <%= payment.amount.toLocaleString() %></span>
+                    </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="text-center py-8 text-gray-400 text-sm">
+                    <i class="fas fa-check-circle text-3xl mb-2 text-green-100"></i>
+                    <p>No upcoming payments</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Wallets Section (Span 2 cols) -->
+        <div class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800">My Wallets</h3>
+                <a href="/admin/finance/wallets" class="text-blue-600 text-sm font-medium hover:underline">View All</a>
+            </div>
+            
+            <div class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x">
+                <!-- Add New Wallet Card -->
+                <a href="/admin/finance/wallets/add" class="flex-shrink-0 w-72 h-44 bg-white border-2 border-dashed border-gray-300 rounded-3xl flex flex-col items-center justify-center text-gray-400 hover:border-blue-500 hover:text-blue-500 transition-all snap-center group">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center mb-2 transition-colors">
+                        <i class="fas fa-plus text-lg"></i>
+                    </div>
+                    <span class="font-bold text-sm">Add New Wallet</span>
+                </a>
+        
+                <% wallets.forEach((w) => { %>
+                    <!-- Wallet Card -->
+                    <div class="flex-shrink-0 w-72 h-44 rounded-3xl p-5 text-white relative overflow-hidden shadow-lg snap-center transform hover:-translate-y-1 transition-all duration-300 group" 
+                         style="background: linear-gradient(135deg, <%= w.color || '#3b82f6' %> 0%, <%= w.color ? w.color + 'dd' : '#1d4ed8' %> 100%);">
+                        
+                        <!-- Background Pattern -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl"></div>
+                        
+                        <div class="relative z-10 flex flex-col h-full justify-between">
+                            <div class="flex justify-between items-start">
+                                <div class="flex flex-col">
+                                    <span class="text-white/80 text-[10px] font-medium tracking-wider uppercase"><%= w.type %></span>
+                                    <h4 class="font-bold text-base tracking-wide"><%= w.name %></h4>
+                                </div>
+                                <i class="fas fa-wifi text-white/50 rotate-90 text-xs"></i>
+                            </div>
+        
+                            <div>
+                                <p class="text-[10px] text-white/80 mb-1 font-mono">**** <%= w._id.toString().slice(-4) %></p>
+                                <div class="flex justify-between items-end">
+                                    <h3 class="text-xl font-bold tracking-tight"><%= w.currency %> <%= w.balance.toLocaleString() %></h3>
+                                    <a href="/admin/finance/wallets/edit/<%= w._id %>" class="text-[10px] bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h3 class="font-bold text-gray-800">Recent Activity</h3>
+            
+            <!-- Filters & Search -->
+            <form action="/admin/finance" method="GET" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input type="text" name="search" value="<%= search %>" placeholder="Search..." 
+                           class="pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-48">
+                </div>
+                <select name="filter" onchange="this.form.submit()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white">
+                    <option value="all" <%= filter === 'all' ? 'selected' : '' %>>All Transactions</option>
+                    <option value="income" <%= filter === 'income' ? 'selected' : '' %>>Income Only</option>
+                    <option value="expense" <%= filter === 'expense' ? 'selected' : '' %>>Expenses Only</option>
+                    <option value="transfers" <%= filter === 'transfers' ? 'selected' : '' %>>Transfers/Payments</option>
+                </select>
+            </form>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <tbody class="divide-y divide-gray-100">
+                    <% recentActivity.forEach(item => { %>
+                        <tr class="hover:bg-gray-50 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4 shadow-sm
+                                        <%= item.type === 'expense' ? 'bg-red-50 text-red-600' : 
+                                           item.type === 'income' ? 'bg-green-50 text-green-600' : 
+                                           'bg-blue-50 text-blue-600' %>">
+                                        <i class="fas <%= item.type === 'expense' ? 'fa-receipt' : 
+                                                       item.type === 'income' ? 'fa-money-bill-wave' : 
+                                                       'fa-exchange-alt' %>"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">
+                                            <%= item.type === 'expense' ? item.title : 
+                                               item.type === 'income' ? item.source : 
+                                               (item.type === 'send' ? 'Sent to ' + (item.person ? item.person.name : 'Unknown') : 'Received from ' + (item.person ? item.person.name : 'Unknown')) %>
+                                        </p>
+                                        <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                                            <span><%= new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %></span>
+                                            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                            <span><%= item.category || (item.type === 'payment' ? 'Payment' : 'General') %></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="font-bold text-base <%= item.type === 'expense' || (item.type === 'payment' && item.type === 'send') ? 'text-red-600' : 'text-green-600' %>">
+                                    <%= item.type === 'expense' || (item.type === 'payment' && item.type === 'send') ? '-' : '+' %> 
+                                    Rs <%= item.amount.toLocaleString() %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }) %>
+                    <% if (recentActivity.length === 0) { %>
+                        <tr>
+                            <td colspan="2" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fas fa-search text-4xl text-gray-200 mb-3"></i>
+                                    <p>No transactions found matching your criteria.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<!-- Recent Activity Feed -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-        <h3 class="font-bold text-gray-800">Recent Activity</h3>
-        <span class="text-xs text-gray-500">Combined Stream</span>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <tbody class="divide-y divide-gray-100">
-                <% recentActivity.forEach(item => { %>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 
-                                    <%= item.type === 'expense' ? 'bg-red-100 text-red-600' : 
-                                       item.type === 'income' ? 'bg-green-100 text-green-600' : 
-                                       'bg-blue-100 text-blue-600' %>">
-                                    <i class="fas <%= item.type === 'expense' ? 'fa-receipt' : 
-                                                   item.type === 'income' ? 'fa-money-bill-wave' : 
-                                                   'fa-exchange-alt' %> text-xs"></i>
-                                </div>
-                                <div>
-                                    <p class="font-medium text-gray-900">
-                                        <%= item.type === 'expense' ? item.title : 
-                                           item.type === 'income' ? item.source : 
-                                           (item.type === 'send' ? 'Sent to ' + item.person.name : 'Received from ' + item.person.name) %>
-                                    </p>
-                                    <p class="text-xs text-gray-500"><%= new Date(item.date).toLocaleDateString() %></p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <span class="font-bold <%= item.type === 'expense' || (item.type === 'payment' && item.type === 'send') ? 'text-red-600' : 'text-green-600' %>">
-                                <%= item.type === 'expense' || (item.type === 'payment' && item.type === 'send') ? '-' : '+' %> 
-                                Rs <%= item.amount.toLocaleString() %>
-                            </span>
-                        </td>
-                    </tr>
-                <% }) %>
-                <% if (recentActivity.length === 0) { %>
-                    <tr>
-                        <td colspan="2" class="px-6 py-8 text-center text-gray-500">No recent activity found.</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-    </div>
-</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Chart Data from Server
+        const chartData = <%- JSON.stringify(chartData) %>;
+        const walletsData = <%- JSON.stringify(wallets) %>;
+
+        // 1. Income vs Expense Chart
+        const ctx1 = document.getElementById('incomeExpenseChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: chartData.expenseTrend.map(d => `${d._id.month}/${d._id.year}`),
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: chartData.incomeTrend.map(d => d.total),
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Expense',
+                        data: chartData.expenseTrend.map(d => d.total),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // 2. Wallet Distribution Chart
+        const ctx3 = document.getElementById('walletChart').getContext('2d');
+        new Chart(ctx3, {
+            type: 'doughnut',
+            data: {
+                labels: walletsData.map(w => w.name),
+                datasets: [{
+                    data: walletsData.map(w => w.balance),
+                    backgroundColor: walletsData.map(w => w.color || '#3b82f6'),
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // 3. Category Spending Chart
+        const ctx2 = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: chartData.categorySpending.map(d => d._id),
+                datasets: [{
+                    label: 'Spending',
+                    data: chartData.categorySpending.map(d => d.total),
+                    backgroundColor: [
+                        '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'
+                    ],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>

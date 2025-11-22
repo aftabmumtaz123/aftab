@@ -1,19 +1,41 @@
-<div class="mb-8">
+<div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Financial Reports</h1>
-    <p class="text-gray-500">Analyze your expenses and cash flow.</p>
+    <a href="/admin/finance/reports/export" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center shadow-md">
+        <i class="fas fa-file-csv mr-2"></i> Export CSV
+    </a>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
     <!-- Monthly Expenses Chart -->
     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <h3 class="font-bold text-gray-800 mb-4">Monthly Expenses</h3>
-        <canvas id="monthlyChart"></canvas>
+        <div class="h-64">
+            <canvas id="monthlyChart"></canvas>
+        </div>
     </div>
 
     <!-- Category Breakdown Chart -->
     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <h3 class="font-bold text-gray-800 mb-4">Expense Categories</h3>
-        <canvas id="categoryChart"></canvas>
+        <div class="h-64">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Yearly Overview Chart -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4">Yearly Overview</h3>
+        <div class="h-64">
+            <canvas id="yearlyChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Wallet-wise Spending Chart -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <h3 class="font-bold text-gray-800 mb-4">Wallet-wise Spending</h3>
+        <div class="h-64">
+            <canvas id="walletChart"></canvas>
+        </div>
     </div>
 </div>
 
@@ -21,8 +43,7 @@
 <script>
     // Monthly Data
     const monthlyData = <%- JSON.stringify(monthlyExpenses) %>;
-    const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-    const monthlyChart = new Chart(monthlyCtx, {
+    new Chart(document.getElementById('monthlyChart').getContext('2d'), {
         type: 'bar',
         data: {
             labels: monthlyData.map(m => `Month ${m._id}`),
@@ -33,34 +54,55 @@
                 borderRadius: 4
             }]
         },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
     });
 
     // Category Data
     const categoryData = <%- JSON.stringify(categoryExpenses) %>;
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    const categoryChart = new Chart(categoryCtx, {
+    new Chart(document.getElementById('categoryChart').getContext('2d'), {
         type: 'doughnut',
         data: {
             labels: categoryData.map(c => c._id),
             datasets: [{
                 data: categoryData.map(c => c.total),
-                backgroundColor: [
-                    '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#64748b'
-                ],
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#64748b'],
                 borderWidth: 0
             }]
         },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    // Yearly Data
+    const yearlyData = <%- JSON.stringify(yearlyExpenses || []) %>;
+    new Chart(document.getElementById('yearlyChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: yearlyData.map(y => y._id),
+            datasets: [{
+                label: 'Total Expenses',
+                data: yearlyData.map(y => y.total),
+                borderColor: '#8b5cf6',
+                backgroundColor: '#8b5cf620',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+
+    // Wallet Data
+    const walletData = <%- JSON.stringify(walletExpenses || []) %>;
+    new Chart(document.getElementById('walletChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: walletData.map(w => w.name),
+            datasets: [{
+                label: 'Spending',
+                data: walletData.map(w => w.total),
+                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
+                borderRadius: 4
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
     });
 </script>

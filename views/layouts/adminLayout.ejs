@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %> | Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e3a8a">
@@ -15,6 +16,13 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-900">
@@ -170,8 +178,8 @@
     </div>
 
     <script src="/js/idb-utility.js"></script>
-    <script src="/js/offline-sync.js"></script>
     <script src="/js/toast.js"></script>
+    <script src="/js/offline-sync.js"></script>
     <script>
         // Simple mobile menu toggle
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
