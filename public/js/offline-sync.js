@@ -128,4 +128,41 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error accessing sync queue', err);
         }
     };
+
+    // --- Auto Cache / Download for Offline ---
+    window.downloadForOffline = async () => {
+        if (!navigator.onLine) {
+            toast.error('You are offline. Cannot download.');
+            return;
+        }
+
+        const urlsToCache = [
+            '/admin/finance',
+            '/admin/finance/expenses',
+            '/admin/finance/income',
+            '/admin/finance/wallets',
+            '/admin/finance/people',
+            '/admin/finance/categories',
+            '/admin/finance/payments',
+            '/admin/finance/reports'
+        ];
+
+        toast.info(`Starting download of ${urlsToCache.length} pages...`);
+
+        let successCount = 0;
+        for (const url of urlsToCache) {
+            try {
+                await fetch(url); // Service Worker will intercept and cache this
+                successCount++;
+            } catch (err) {
+                console.error(`Failed to cache ${url}:`, err);
+            }
+        }
+
+        if (successCount === urlsToCache.length) {
+            toast.success('Ready for Offline! All pages cached.');
+        } else {
+            toast.warning(`Download complete. ${successCount}/${urlsToCache.length} pages cached.`);
+        }
+    };
 });
