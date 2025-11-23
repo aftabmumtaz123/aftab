@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '/',
             '/projects',
             '/resume',
+            '/resume/print',
             '/contact',
             '/admin/dashboard',
             '/admin/hero',

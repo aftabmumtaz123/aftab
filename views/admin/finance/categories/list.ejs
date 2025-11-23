@@ -20,7 +20,11 @@
                     </div>
                     <div class="flex space-x-3">
                         <a href="/admin/finance/categories/edit/<%= c._id %>" class="text-gray-400 hover:text-blue-600"><i class="fas fa-edit"></i></a>
-                        <a href="/admin/finance/categories/delete/<%= c._id %>" class="text-gray-400 hover:text-red-600" onclick="return confirm('Delete this category?')"><i class="fas fa-trash"></i></a>
+                        <form action="/admin/finance/categories/delete/<%= c._id %>" method="POST" class="inline">
+                            <button type="button" onclick="openDeleteModal(this.closest('form'))" class="text-gray-400 hover:text-red-600 transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             <% }) %>
@@ -41,7 +45,11 @@
                     </div>
                     <div class="flex space-x-3">
                         <a href="/admin/finance/categories/edit/<%= c._id %>" class="text-gray-400 hover:text-blue-600"><i class="fas fa-edit"></i></a>
-                        <a href="/admin/finance/categories/delete/<%= c._id %>" class="text-gray-400 hover:text-red-600" onclick="return confirm('Delete this category?')"><i class="fas fa-trash"></i></a>
+                        <form action="/admin/finance/categories/delete/<%= c._id %>" method="POST" class="inline">
+                            <button type="button" onclick="openDeleteModal(this.closest('form'))" class="text-gray-400 hover:text-red-600 transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             <% }) %>

@@ -1050,7 +1050,7 @@ router.post('/categories/edit/:id', async (req, res) => {
     }
 });
 
-router.get('/categories/delete/:id', async (req, res) => {
+router.post('/categories/delete/:id', async (req, res) => {
     try {
         await financeHelpers.deleteCategory(req.params.id);
         res.redirect('/admin/finance/categories');

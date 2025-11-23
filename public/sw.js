@@ -3,6 +3,7 @@ const ASSETS_TO_CACHE = [
     '/',
     '/projects',
     '/resume',
+    '/resume/print',
     '/contact',
     '/admin/dashboard',
     '/admin/hero',
