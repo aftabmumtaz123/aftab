@@ -138,19 +138,19 @@ const financeHelpers = {
     // --- Wallets ---
     createWallet: async (data) => {
         const wallet = await Wallet.create(data);
-        if (redisClient.isOpen) await redisClient.del('finance:wallets');
+        if (redisClient?.isReady) await redisClient.del('finance:wallets');
         return wallet;
     },
 
     updateWallet: async (id, data) => {
         const wallet = await Wallet.findByIdAndUpdate(id, data, { new: true });
-        if (redisClient.isOpen) await redisClient.del('finance:wallets');
+        if (redisClient?.isReady) await redisClient.del('finance:wallets');
         return wallet;
     },
 
     deleteWallet: async (id) => {
         const wallet = await Wallet.findByIdAndDelete(id);
-        if (redisClient.isOpen) await redisClient.del('finance:wallets');
+        if (redisClient?.isReady) await redisClient.del('finance:wallets');
         return wallet;
     },
 
@@ -171,39 +171,39 @@ const financeHelpers = {
         await Wallet.findByIdAndUpdate(toWallet, { $inc: { balance: transferAmount } });
 
         // Clear Cache
-        if (redisClient.isOpen) await redisClient.del('finance:wallets');
+        if (redisClient?.isReady) await redisClient.del('finance:wallets');
         return transfer;
     },
 
     // --- People ---
     createPerson: async (data) => {
         const person = await Person.create(data);
-        if (redisClient.isOpen) await redisClient.del('finance:people');
+        if (redisClient?.isReady) await redisClient.del('finance:people');
         return person;
     },
 
     updatePerson: async (id, data) => {
         const person = await Person.findByIdAndUpdate(id, data, { new: true });
-        if (redisClient.isOpen) await redisClient.del('finance:people');
+        if (redisClient?.isReady) await redisClient.del('finance:people');
         return person;
     },
 
     // --- Categories ---
     createCategory: async (data) => {
         const category = await Category.create(data);
-        if (redisClient.isOpen) await redisClient.del('finance:categories');
+        if (redisClient?.isReady) await redisClient.del('finance:categories');
         return category;
     },
 
     updateCategory: async (id, data) => {
         const category = await Category.findByIdAndUpdate(id, data, { new: true });
-        if (redisClient.isOpen) await redisClient.del('finance:categories');
+        if (redisClient?.isReady) await redisClient.del('finance:categories');
         return category;
     },
 
     deleteCategory: async (id) => {
         const category = await Category.findByIdAndDelete(id);
-        if (redisClient.isOpen) await redisClient.del('finance:categories');
+        if (redisClient?.isReady) await redisClient.del('finance:categories');
         return category;
     },
 

@@ -4,26 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Offline | Admin Panel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/js/tailwindcss.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: system-ui, -apple-system, sans-serif; }
     </style>
 </head>
 <body class="bg-gray-50 flex items-center justify-center h-screen">
-    <div class="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md w-full mx-4">
-        <div class="mb-6 text-gray-200">
-            <i class="fas fa-wifi text-6xl"></i>
-            <div class="mt-2 text-4xl relative" style="top: -20px; left: 20px;">
-                <i class="fas fa-slash text-red-500"></i>
+    <div class="text-center p-8 bg-white rounded-2xl shadow-lg max-w-md w-full mx-4 border border-gray-100">
+        <div class="mb-6 flex justify-center">
+            <div class="relative">
+                <!-- Wifi Off Icon -->
+                <svg class="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"></path>
+                </svg>
             </div>
         </div>
         <h1 class="text-2xl font-bold text-gray-800 mb-2">You are offline</h1>
         <p class="text-gray-600 mb-8">We couldn't load this page. Please check your internet connection.</p>
         
         <div class="space-y-3">
-            <a href="/admin/finance" class="block w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">
+            <a href="/admin/finance" class="block w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm hover:shadow-md">
                 Go to Finance Dashboard
             </a>
             <button onclick="window.location.reload()" class="block w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">

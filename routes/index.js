@@ -26,6 +26,11 @@ router.use((req, res, next) => {
     next();
 });
 
+// Offline Page (for Service Worker)
+router.get('/offline', (req, res) => {
+    res.render('offline', { layout: false });
+});
+
 router.get('/', async (req, res) => {
     try {
         let config = await SiteConfig.findOne();

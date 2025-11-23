@@ -8,8 +8,8 @@ const ASSETS_TO_CACHE = [
     '/js/offline-sync.js',
     '/js/toast.js',
     '/manifest.json',
-    'https://cdn.tailwindcss.com',
-    'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+    '/js/tailwindcss.js',
+    '/js/chart.js',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     '/offline'
 ];
