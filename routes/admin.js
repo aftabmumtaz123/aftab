@@ -19,7 +19,7 @@ router.use((req, res, next) => {
     if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
         // If it's a sync request or static asset, let it pass (though static assets usually handled before)
         // But for admin pages, if DB is down, show offline page
-        return res.render('offline', { layout: false });
+        return res.status(503).render('offline', { layout: false });
     }
     next();
 });

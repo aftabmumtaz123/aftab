@@ -21,7 +21,7 @@ router.use((req, res, next) => {
         // If it's the home page, we might want to try to render it if possible, 
         // but it relies on DB for projects, skills etc.
         // So yes, offline page is appropriate if DB is down.
-        return res.render('offline', { layout: false });
+        return res.status(503).render('offline', { layout: false });
     }
     next();
 });

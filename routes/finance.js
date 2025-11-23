@@ -17,15 +17,8 @@ router.use(requireAuth);
 // Middleware to check DB connection for all finance routes
 router.use((req, res, next) => {
     if (req.method === 'GET' && require('mongoose').connection.readyState !== 1) {
-        // Allow if it's a sync request or if we have cache (handled in individual routes)
-        // But for general navigation if cache is missing and DB is down:
-        // Individual routes check cache first. If cache misses and DB is down, they should handle it.
-        // However, adding a global check here might be too aggressive if we want to allow cache hits.
-        // Let's NOT add a global blocker here, but ensure individual routes handle "Cache Miss + DB Down" gracefully.
-        // Actually, the user wants it "everywhere".
-        // If I block here, cache logic in routes won't run.
-        // So I should insert this check AFTER cache check failure in routes, OR allow routes to run and handle it.
-        // Better strategy: Update routes to check DB status if cache misses.
+        // If DB is down, return 503 so Service Worker can serve from cache
+        return res.status(503).render('offline', { layout: false });
     }
     next();
 });

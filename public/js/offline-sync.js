@@ -137,6 +137,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const urlsToCache = [
+            '/',
+            '/projects',
+            '/resume',
+            '/contact',
+            '/admin/dashboard',
+            '/admin/hero',
+            '/admin/skills',
+            '/admin/experience',
+            '/admin/education',
+            '/admin/projects',
+            '/admin/testimonials',
+            '/admin/blog',
+            '/admin/config',
             '/admin/finance',
             '/admin/finance/expenses',
             '/admin/finance/income',
@@ -147,43 +160,50 @@ document.addEventListener('DOMContentLoaded', () => {
             '/admin/finance/reports'
         ];
 
-        // Show Progress Bar
+        // UI Elements
         const progressContainer = document.getElementById('offline-progress-container');
         const progressBar = document.getElementById('offline-progress-bar');
-        if (progressContainer && progressBar) {
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-        }
+        const progressText = document.getElementById('progress-text');
+        const downloadState = document.getElementById('download-state');
+        const successState = document.getElementById('success-state');
 
-        toast.info(`Starting download of ${urlsToCache.length} pages...`);
+        // Reset & Show UI
+        if (progressContainer) {
+            progressContainer.classList.remove('hidden');
+            if (downloadState) downloadState.classList.remove('hidden');
+            if (successState) successState.classList.add('hidden');
+            if (progressBar) progressBar.style.width = '0%';
+            if (progressText) progressText.textContent = '0% Complete';
+        }
 
         let successCount = 0;
         for (let i = 0; i < urlsToCache.length; i++) {
             const url = urlsToCache[i];
             try {
-                await fetch(url); // Service Worker will intercept and cache this
+                await fetch(url, { credentials: 'include' }); // Service Worker will intercept and cache this
                 successCount++;
 
-                // Update Progress Bar
-                if (progressBar) {
-                    const percent = ((i + 1) / urlsToCache.length) * 100;
-                    progressBar.style.width = `${percent}%`;
-                }
+                // Update Progress
+                const percent = Math.round(((i + 1) / urlsToCache.length) * 100);
+                if (progressBar) progressBar.style.width = `${percent}%`;
+                if (progressText) progressText.textContent = `${percent}% Complete`;
 
             } catch (err) {
                 console.error(`Failed to cache ${url}:`, err);
             }
         }
 
-        // Hide Progress Bar after a delay
-        setTimeout(() => {
-            if (progressContainer) progressContainer.style.display = 'none';
-        }, 2000);
-
+        // Show Success State
         if (successCount === urlsToCache.length) {
-            toast.success('Successfully cached for offline mode!');
+            setTimeout(() => {
+                if (downloadState) downloadState.classList.add('hidden');
+                if (successState) successState.classList.remove('hidden');
+            }, 500);
         } else {
             toast.warning(`Download complete. ${successCount}/${urlsToCache.length} pages cached.`);
+            setTimeout(() => {
+                if (progressContainer) progressContainer.classList.add('hidden');
+            }, 2000);
         }
     };
 });

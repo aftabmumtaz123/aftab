@@ -1,7 +1,18 @@
-const CACHE_NAME = 'portfolio-v3';
+const CACHE_NAME = 'portfolio-v7';
 const ASSETS_TO_CACHE = [
     '/',
+    '/projects',
+    '/resume',
+    '/contact',
     '/admin/dashboard',
+    '/admin/hero',
+    '/admin/skills',
+    '/admin/experience',
+    '/admin/education',
+    '/admin/projects',
+    '/admin/testimonials',
+    '/admin/blog',
+    '/admin/config',
     '/admin/finance',
     '/css/style.css',
     '/js/idb-utility.js',
@@ -51,14 +62,22 @@ self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
 
     // 1. API GET requests (Network-First for fresh data)
-    // Try network first, then fall back to cache if offline
-    if (requestUrl.pathname.startsWith('/admin/finance') && event.request.method === 'GET') {
+    if (requestUrl.pathname.startsWith('/admin') && event.request.method === 'GET') {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
                     // Check if valid response
+                    // If status is 503 (Service Unavailable) or not 200, try cache
                     if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
+                        console.log('[SW] Server returned error/503, checking cache for:', event.request.url);
+                        return caches.match(event.request.url, { ignoreVary: true }).then(cachedResponse => {
+                            if (cachedResponse) {
+                                console.log('[SW] Found in cache:', event.request.url);
+                                return cachedResponse;
+                            }
+                            console.log('[SW] Not found in cache:', event.request.url);
+                            return response;
+                        });
                     }
                     // Clone and cache
                     const responseToCache = response.clone();
@@ -69,8 +88,8 @@ self.addEventListener('fetch', event => {
                     return response;
                 })
                 .catch(() => {
-                    // Network failed, try cache
-                    return caches.match(event.request);
+                    console.log('[SW] Network failed, checking cache for:', event.request.url);
+                    return caches.match(event.request.url, { ignoreVary: true });
                 })
         );
         return;
@@ -81,7 +100,7 @@ self.addEventListener('fetch', event => {
         event.respondWith(
             fetch(event.request)
                 .then(response => {
-                    // Check if we received a valid response
+                    // Check if valid response
                     if (!response || response.status !== 200 || response.type !== 'basic') {
                         return response;
                     }
@@ -95,7 +114,8 @@ self.addEventListener('fetch', event => {
                 })
                 .catch(() => {
                     // If network fails, try to serve from cache
-                    return caches.match(event.request)
+                    // Use request.url to avoid mismatch due to mode/headers
+                    return caches.match(event.request.url, { ignoreVary: true })
                         .then(response => {
                             if (response) {
                                 return response;
@@ -110,7 +130,7 @@ self.addEventListener('fetch', event => {
 
     // 3. Static Assets (Cache First)
     event.respondWith(
-        caches.match(event.request)
+        caches.match(event.request, { ignoreVary: true })
             .then(response => {
                 if (response) {
                     return response;
