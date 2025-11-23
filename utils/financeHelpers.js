@@ -10,11 +10,27 @@ const redisClient = require('../config/redis');
 const financeHelpers = {
     // --- Expenses ---
     createExpense: async (data) => {
+        // Auto-calculate status
+        if (data.paidAmount >= data.amount) data.status = 'Paid';
+        else if (data.paidAmount > 0) data.status = 'Partial';
+        else data.status = 'Pending';
+
+        // Initialize Payment History if paidAmount > 0
+        if (data.paidAmount > 0) {
+            data.paymentHistory = [{
+                amount: data.paidAmount,
+                date: data.date || new Date(),
+                method: data.paymentMethod,
+                wallet: data.wallet,
+                notes: 'Initial payment'
+            }];
+        }
+
         const expense = await Expense.create(data);
 
         // Deduct from Wallet if status is Paid or Partial
         if (data.wallet && (data.status === 'Paid' || data.status === 'Partial')) {
-            const amountToDeduct = data.status === 'Partial' ? (data.paidAmount || 0) : data.amount;
+            const amountToDeduct = data.paidAmount || 0;
             await Wallet.findByIdAndUpdate(data.wallet, { $inc: { balance: -amountToDeduct } });
         }
 
@@ -33,15 +49,20 @@ const financeHelpers = {
 
         // Revert old wallet balance
         if (oldExpense.wallet && (oldExpense.status === 'Paid' || oldExpense.status === 'Partial')) {
-            const oldAmount = oldExpense.status === 'Partial' ? (oldExpense.paidAmount || 0) : oldExpense.amount;
+            const oldAmount = oldExpense.paidAmount || 0;
             await Wallet.findByIdAndUpdate(oldExpense.wallet, { $inc: { balance: oldAmount } });
         }
+
+        // Auto-calculate status
+        if (data.paidAmount >= data.amount) data.status = 'Paid';
+        else if (data.paidAmount > 0) data.status = 'Partial';
+        else data.status = 'Pending';
 
         const updatedExpense = await Expense.findByIdAndUpdate(id, data, { new: true });
 
         // Apply new wallet balance
         if (updatedExpense.wallet && (updatedExpense.status === 'Paid' || updatedExpense.status === 'Partial')) {
-            const newAmount = updatedExpense.status === 'Partial' ? (updatedExpense.paidAmount || 0) : updatedExpense.amount;
+            const newAmount = updatedExpense.paidAmount || 0;
             await Wallet.findByIdAndUpdate(updatedExpense.wallet, { $inc: { balance: -newAmount } });
         }
 
@@ -60,7 +81,7 @@ const financeHelpers = {
 
         // Refund to Wallet
         if (expense.wallet && (expense.status === 'Paid' || expense.status === 'Partial')) {
-            const amountToRefund = expense.status === 'Partial' ? (expense.paidAmount || 0) : expense.amount;
+            const amountToRefund = expense.paidAmount || 0;
             await Wallet.findByIdAndUpdate(expense.wallet, { $inc: { balance: amountToRefund } });
         }
 
@@ -209,11 +230,17 @@ const financeHelpers = {
 
     // --- Payments ---
     createPayment: async (data) => {
+        // Auto-calculate status
+        if (data.paidAmount >= data.amount) data.status = 'Completed';
+        else if (data.paidAmount > 0) data.status = 'Partial';
+        else data.status = 'Pending';
+
         const payment = await Payment.create(data);
 
         // Update Wallet Balance
-        if (data.wallet && data.status === 'Completed') {
-            const change = data.type === 'receive' ? data.amount : -data.amount;
+        if (data.wallet && (data.status === 'Completed' || data.status === 'Partial')) {
+            const amountToProcess = data.paidAmount || 0;
+            const change = data.type === 'receive' ? amountToProcess : -amountToProcess;
             await Wallet.findByIdAndUpdate(data.wallet, { $inc: { balance: change } });
         }
 
@@ -258,8 +285,9 @@ const financeHelpers = {
         if (!payment) throw new Error('Payment not found');
 
         // Revert Wallet Balance
-        if (payment.wallet && payment.status === 'Completed') {
-            const revertChange = payment.type === 'receive' ? -payment.amount : payment.amount;
+        if (payment.wallet && (payment.status === 'Completed' || payment.status === 'Partial')) {
+            const amountToRevert = payment.paidAmount || 0;
+            const revertChange = payment.type === 'receive' ? -amountToRevert : amountToRevert;
             await Wallet.findByIdAndUpdate(payment.wallet, { $inc: { balance: revertChange } });
         }
 

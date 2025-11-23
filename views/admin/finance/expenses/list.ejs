@@ -8,33 +8,83 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left">
-            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-                <tr>
-                    <th class="px-6 py-3">Date</th>
-                    <th class="px-6 py-3">Title</th>
-                    <th class="px-6 py-3">Category</th>
-                    <th class="px-6 py-3">Method</th>
-                    <th class="px-6 py-3">Amount</th>
-                    <th class="px-6 py-3">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                <% expenses.forEach(e => { %>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-gray-500"><%= new Date(e.date).toLocaleDateString() %></td>
-                        <td class="px-6 py-4 font-medium text-gray-900"><%= e.title %></td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs"><%= e.category %></span>
-                        </td>
-                        <td class="px-6 py-4 text-gray-500"><%= e.paymentMethod %></td>
-                        <td class="px-6 py-4 font-bold text-red-600">- Rs <%= e.amount.toLocaleString() %></td>
-                        <td class="px-6 py-4">
-                            <a href="/admin/finance/expenses/edit/<%= e._id %>" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></a>
-                            <a href="/admin/finance/expenses/delete/<%= e._id %>" class="text-red-600 hover:text-red-800 delete-btn" data-name="this expense"><i class="fas fa-trash"></i></a>
-                        </td>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid / Due</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
-                <% }) %>
-            </tbody>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <% expenses.forEach(expense => { %>
+                        <tr class="hover:bg-gray-50 group">
+                            <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                <%= new Date(expense.date).toLocaleDateString() %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <span class="w-2 h-2 rounded-full mr-2 
+                                        <%= expense.status === 'Paid' ? 'bg-green-500' : 
+                                           expense.status === 'Partial' ? 'bg-orange-500' : 
+                                           expense.status === 'Overdue' ? 'bg-red-500' : 'bg-gray-400' %>"></span>
+                                    <span class="font-medium text-gray-900"><%= expense.title %></span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs"><%= expense.category %></span>
+                            </td>
+                            <td class="px-6 py-4 text-sm font-bold text-gray-900">
+                                Rs <%= expense.amount.toLocaleString() %>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <% if(expense.status === 'Paid') { %>
+                                    <span class="text-green-600 font-medium">Fully Paid</span>
+                                <% } else { 
+                                    const percent = Math.min(100, Math.round(((expense.paidAmount || 0) / expense.amount) * 100));
+                                %>
+                                    <div class="flex flex-col gap-1 min-w-[140px]">
+                                        <div class="flex justify-between text-xs">
+                                            <span class="text-green-600">Paid: <%= (expense.paidAmount || 0).toLocaleString() %></span>
+                                            <span class="text-red-500">Due: <%= expense.amountDue.toLocaleString() %></span>
+                                        </div>
+                                        <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                            <div class="bg-green-500 h-1.5 rounded-full" style="width: <%= percent %>%"></div>
+                                        </div>
+                                    </div>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <% if(expense.endDate && expense.status !== 'Paid') { 
+                                    const daysLeft = Math.ceil((new Date(expense.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+                                %>
+                                    <span class="<%= daysLeft < 0 ? 'text-red-600 font-bold' : 'text-gray-500' %>">
+                                        <%= new Date(expense.endDate).toLocaleDateString() %>
+                                        <% if(daysLeft < 0) { %> <i class="fas fa-exclamation-circle ml-1"></i> <% } %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="text-gray-400">-</span>
+                                <% } %>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a href="/admin/finance/expenses/<%= expense._id %>" class="text-blue-600 hover:text-blue-900 bg-blue-50 p-2 rounded-lg hover:bg-blue-100 transition-colors" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/admin/finance/expenses/edit/<%= expense._id %>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="/admin/finance/expenses/delete/<%= expense._id %>" class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-lg hover:bg-red-100 transition-colors" onclick="return confirm('Are you sure?')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
         </table>
     </div>
 </div>

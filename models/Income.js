@@ -11,6 +11,11 @@ const incomeSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
+    status: {
+        type: String,
+        enum: ['Completed', 'Pending'],
+        default: 'Completed'
+    },
     date: {
         type: Date,
         default: Date.now

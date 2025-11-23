@@ -1,0 +1,90 @@
+<div class="max-w-4xl mx-auto">
+    <!-- Header / Back -->
+    <div class="mb-6 flex items-center justify-between">
+        <a href="/admin/finance/income" class="flex items-center text-gray-500 hover:text-gray-800 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Income
+        </a>
+        <div class="flex gap-2">
+            <a href="/admin/finance/income/edit/<%= income._id %>" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors">
+                <i class="fas fa-edit mr-2"></i> Edit
+            </a>
+            <form action="/admin/finance/income/delete/<%= income._id %>" method="GET" onsubmit="return confirm('Are you sure?');">
+                <button type="submit" class="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium transition-colors">
+                    <i class="fas fa-trash mr-2"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative">
+        <!-- Background Decoration -->
+        <div class="absolute top-0 right-0 w-64 h-64 bg-green-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 pointer-events-none"></div>
+
+        <div class="relative z-10 p-6 md:p-8">
+            <!-- Income Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                            <%= income.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' %>">
+                            <%= income.status || 'Completed' %>
+                        </span>
+                        <span class="text-xs font-medium text-gray-500">
+                            <%= new Date(income.date).toLocaleDateString() %>
+                        </span>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900"><%= income.source %></h1>
+                    <div class="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                        <span class="flex items-center"><i class="fas fa-tag mr-2 text-gray-400"></i> <%= income.category ? income.category.name : 'Uncategorized' %></span>
+                    </div>
+                </div>
+                
+                <!-- Amount -->
+                <div class="text-right">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1">Total Income</p>
+                    <h2 class="text-4xl font-bold text-green-600">+ Rs <%= income.amount.toLocaleString() %></h2>
+                </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-gray-100">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-3">Source Details</p>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <p class="text-sm text-gray-600 mb-1">Source Name</p>
+                        <p class="font-bold text-gray-900"><%= income.source %></p>
+                        
+                        <p class="text-sm text-gray-600 mt-3 mb-1">Category</p>
+                        <p class="font-medium text-gray-900"><%= income.category ? income.category.name : 'Uncategorized' %></p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-3">Deposit Info</p>
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                        <p class="text-sm text-gray-600 mb-1">Deposited To</p>
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+                                <i class="fas fa-wallet text-xs"></i>
+                            </div>
+                            <p class="font-bold text-gray-900"><%= income.wallet ? income.wallet.name : 'Unknown Wallet' %></p>
+                        </div>
+                        
+                        <p class="text-sm text-gray-600 mt-3 mb-1">Date Received</p>
+                        <p class="font-medium text-gray-900"><%= new Date(income.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-3">Notes</p>
+                <div class="bg-yellow-50/50 rounded-xl p-6 border border-yellow-100">
+                    <p class="text-gray-700 text-sm leading-relaxed italic">
+                        "<%= income.notes || 'No notes provided for this income.' %>"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

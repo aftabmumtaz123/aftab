@@ -8,37 +8,60 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left">
-            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-                <tr>
-                    <th class="px-6 py-3">Date</th>
-                    <th class="px-6 py-3">Source</th>
-                    <th class="px-6 py-3">Category</th>
-                    <th class="px-6 py-3">Wallet</th>
-                    <th class="px-6 py-3">Amount</th>
-                    <th class="px-6 py-3">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                <% income.forEach(i => { %>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-gray-500"><%= new Date(i.date).toLocaleDateString() %></td>
-                        <td class="px-6 py-4 font-medium text-gray-900"><%= i.source %></td>
-                        <td class="px-6 py-4">
-                            <% if(i.category) { %>
-                                <span class="px-2 py-1 rounded text-xs text-white" style="background-color: <%= i.category.color %>"><%= i.category.name %></span>
-                            <% } else { %>
-                                <span class="text-gray-400">-</span>
-                            <% } %>
-                        </td>
-                        <td class="px-6 py-4 text-gray-500"><%= i.wallet ? i.wallet.name : '-' %></td>
-                        <td class="px-6 py-4 font-bold text-green-600">+ Rs <%= i.amount.toLocaleString() %></td>
-                        <td class="px-6 py-4">
-                            <a href="/admin/finance/income/edit/<%= i._id %>" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></a>
-                            <a href="/admin/finance/income/delete/<%= i._id %>" class="text-red-600 hover:text-red-800 delete-btn" data-name="this income record"><i class="fas fa-trash"></i></a>
-                        </td>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
-                <% }) %>
-            </tbody>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <% income.forEach(item => { %>
+                        <tr class="hover:bg-gray-50 group">
+                            <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                <%= new Date(item.date).toLocaleDateString() %>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="font-bold text-gray-900 text-base"><%= item.source %></span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs"><%= item.category ? item.category.name : 'Uncategorized' %></span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="fas fa-wallet text-gray-400 mr-2"></i>
+                                    <%= item.wallet ? item.wallet.name : 'Unknown' %>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-base font-bold text-green-600">
+                                + Rs <%= item.amount.toLocaleString() %>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                                    <%= item.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' %>">
+                                    <%= item.status || 'Completed' %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a href="/admin/finance/income/<%= item._id %>" class="text-blue-600 hover:text-blue-900 bg-blue-50 p-2 rounded-lg hover:bg-blue-100 transition-colors" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/admin/finance/income/edit/<%= item._id %>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="/admin/finance/income/delete/<%= item._id %>" class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-lg hover:bg-red-100 transition-colors" onclick="return confirm('Are you sure?')" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
         </table>
     </div>
 </div>

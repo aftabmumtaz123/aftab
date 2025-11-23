@@ -1,0 +1,223 @@
+<div class="max-w-4xl mx-auto">
+    <!-- Header / Back -->
+    <div class="mb-6 flex items-center justify-between">
+        <a href="/admin/finance/expenses" class="flex items-center text-gray-500 hover:text-gray-800 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Expenses
+        </a>
+        <div class="flex gap-2">
+            <a href="/admin/finance/expenses/edit/<%= expense._id %>" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors">
+                <i class="fas fa-edit mr-2"></i> Edit
+            </a>
+            <form action="/admin/finance/expenses/delete/<%= expense._id %>" method="GET" onsubmit="return confirm('Are you sure?');">
+                <button type="submit" class="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium transition-colors">
+                    <i class="fas fa-trash mr-2"></i> Delete
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden relative">
+        <!-- Background Decoration -->
+        <div class="absolute top-0 right-0 w-64 h-64 bg-red-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 pointer-events-none"></div>
+
+        <div class="relative z-10 p-6 md:p-8">
+            <!-- Expense Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                            <%= expense.status === 'Paid' ? 'bg-green-100 text-green-700' : 
+                               expense.status === 'Partial' ? 'bg-orange-100 text-orange-700' : 
+                               'bg-gray-100 text-gray-600' %>">
+                            <%= expense.status %>
+                        </span>
+                        <% if(expense.endDate) { 
+                            const daysLeft = Math.ceil((new Date(expense.endDate) - new Date()) / (1000 * 60 * 60 * 24));
+                        %>
+                            <span class="text-xs font-medium <%= daysLeft < 0 ? 'text-red-600' : 'text-gray-500' %>">
+                                <%= daysLeft < 0 ? 'Overdue ' + Math.abs(daysLeft) + ' days' : 'Due in ' + daysLeft + ' days' %>
+                            </span>
+                        <% } %>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900"><%= expense.title %></h1>
+                    <div class="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                        <span class="flex items-center"><i class="fas fa-tag mr-2 text-gray-400"></i> <%= expense.category %></span>
+                        <span class="flex items-center"><i class="fas fa-calendar mr-2 text-gray-400"></i> <%= new Date(expense.date).toLocaleDateString() %></span>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="flex gap-8 text-right">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1">Total Expense</p>
+                        <h2 class="text-2xl font-bold text-gray-900">Rs <%= expense.amount.toLocaleString() %></h2>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-1">Paid So Far</p>
+                        <h2 class="text-2xl font-bold text-green-600">Rs <%= (expense.paidAmount || 0).toLocaleString() %></h2>
+                        <% if(expense.amountDue > 0) { %>
+                            <p class="text-xs text-red-500 font-medium mt-1">Due: Rs <%= expense.amountDue.toLocaleString() %></p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-10">
+                <% const percent = Math.min(100, Math.round(((expense.paidAmount || 0) / expense.amount) * 100)); %>
+                <div class="flex justify-between text-xs font-medium text-gray-500 mb-2">
+                    <span>Payment Progress</span>
+                    <span><%= percent %>%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div class="bg-green-500 h-3 rounded-full transition-all duration-1000 ease-out" style="width: <%= percent %>%"></div>
+                </div>
+            </div>
+
+            <!-- Payment History -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fas fa-history mr-2 text-gray-400"></i> Payment History
+                    </h3>
+                    <% if(expense.status !== 'Paid') { %>
+                        <button onclick="openPaymentModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-bold shadow-lg shadow-green-500/30">
+                            <i class="fas fa-plus mr-2"></i> Record Partial Payment
+                        </button>
+                    <% } %>
+                </div>
+
+                <div class="space-y-3">
+                    <% if (!expense.paymentHistory || expense.paymentHistory.length === 0) { %>
+                        <% if (expense.paidAmount > 0) { %>
+                             <!-- Legacy support for existing expenses with paidAmount but no history -->
+                            <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50">
+                                <div>
+                                    <p class="font-bold text-gray-900">Initial Payment</p>
+                                    <p class="text-xs text-gray-500"><%= new Date(expense.date).toLocaleDateString() %></p>
+                                </div>
+                                <span class="font-bold text-green-600">Rs <%= expense.paidAmount.toLocaleString() %></span>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                <p>No payments recorded yet</p>
+                            </div>
+                        <% } %>
+                    <% } else { %>
+                        <% expense.paymentHistory.forEach(p => { %>
+                            <div class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-all bg-white">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-50 text-green-600">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">Paid <%= p.method || 'Cash' %></p>
+                                        <p class="text-xs text-gray-500">
+                                            <%= new Date(p.date).toLocaleDateString() %>
+                                            <% if(p.notes) { %> • <span class="italic"><%= p.notes %></span> <% } %>
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="font-bold text-green-600">Rs <%= p.amount.toLocaleString() %></span>
+                            </div>
+                        <% }) %>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-100">
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2">Notes</p>
+                    <p class="text-gray-700 text-sm leading-relaxed"><%= expense.notes || 'No notes provided.' %></p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider font-medium mb-2">Wallet / Source</p>
+                    <p class="text-gray-900 font-medium text-sm flex items-center">
+                        <i class="fas fa-wallet mr-2 text-gray-400"></i>
+                        <%= expense.wallet ? expense.wallet.name : 'Unknown / Cash' %>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Partial Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closePaymentModal()"></div>
+    <div class="absolute bottom-0 md:top-1/2 md:left-1/2 md:bottom-auto md:-translate-x-1/2 md:-translate-y-1/2 w-full md:w-[480px] bg-white md:rounded-2xl rounded-t-2xl shadow-2xl transform transition-transform duration-300 translate-y-full scale-95 opacity-0 max-h-[90vh] overflow-y-auto" id="modalContent">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-white z-10 pb-2 border-b border-gray-50">
+                <h3 class="text-xl font-bold text-gray-900">Record Partial Payment</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form action="/admin/finance/expenses/<%= expense._id %>/pay" method="POST" class="space-y-5 pb-2">
+                <!-- Amount -->
+                <div class="bg-gray-50 p-6 rounded-2xl text-center border border-gray-100 flex flex-col items-center justify-center group focus-within:border-blue-200 focus-within:bg-blue-50/30 transition-all">
+                    <label class="text-xs text-gray-500 uppercase tracking-wider mb-2 font-medium">Amount Paid Today</label>
+                    <div class="relative flex items-center justify-center">
+                        <span class="text-gray-400 text-2xl mr-2 font-medium">Rs</span>
+                        <input type="number" name="amount" required min="1" max="<%= expense.amountDue %>" placeholder="0" class="bg-transparent text-5xl font-bold text-gray-900 w-48 text-center focus:outline-none placeholder-gray-300" autofocus>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Max: Rs <%= expense.amountDue.toLocaleString() %></p>
+                </div>
+
+                <!-- Date & Wallet -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1.5 ml-1">Date</label>
+                        <input type="date" name="date" value="<%= new Date().toISOString().split('T')[0] %>" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-gray-50/50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1.5 ml-1">Wallet</label>
+                        <select name="wallet" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-gray-50/50">
+                            <option value="">None (Cash)</option>
+                             <% if(locals.wallets) { %>
+                                <% wallets.forEach(w => { %>
+                                    <option value="<%= w._id %>" <%= expense.wallet && expense.wallet._id.toString() === w._id.toString() ? 'selected' : '' %>><%= w.name %></option>
+                                <% }) %>
+                             <% } %>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1.5 ml-1">Note</label>
+                    <input type="text" name="notes" placeholder="e.g. Paid remaining balance" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-gray-50/50">
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mt-4 bg-green-600 hover:bg-green-700 shadow-green-500/30">
+                    <i class="fas fa-check"></i>
+                    <span>Record Payment</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openPaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        const content = document.getElementById('modalContent');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            content.classList.remove('translate-y-full', 'scale-95', 'opacity-0');
+        });
+    }
+
+    function closePaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        const content = document.getElementById('modalContent');
+        content.classList.add('translate-y-full', 'scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+</script>

@@ -81,9 +81,17 @@ router.post('/sync', async (req, res) => {
 const getFinancialSummary = async () => {
     // 1. Total Expenses
     const expenses = await Expense.aggregate([
-        { $group: { _id: null, total: { $sum: "$amount" } } }
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$amount" },
+                totalPaid: { $sum: "$paidAmount" }
+            }
+        }
     ]);
     const totalExpenses = expenses.length > 0 ? expenses[0].total : 0;
+    const totalExpensesPaid = expenses.length > 0 ? expenses[0].totalPaid : 0;
+    const totalExpensesDue = totalExpenses - totalExpensesPaid;
 
     // 2. Total Income
     const income = await Income.aggregate([
@@ -95,26 +103,30 @@ const getFinancialSummary = async () => {
     const payments = await Payment.aggregate([
         {
             $group: {
-                _id: { type: "$type", status: "$status" },
-                total: { $sum: "$amount" }
+                _id: "$type",
+                totalAmount: { $sum: "$amount" },
+                totalPaid: { $sum: "$paidAmount" }
             }
         }
     ]);
 
     let totalSent = 0;
     let totalReceived = 0;
-    let pendingToReceive = 0;
-    let pendingToSend = 0;
+    let totalSentPaid = 0;
+    let totalReceivedPaid = 0;
 
     payments.forEach(p => {
-        if (p._id.type === 'send') {
-            if (p._id.status === 'Completed') totalSent += p.total;
-            else pendingToSend += p.total;
-        } else if (p._id.type === 'receive') {
-            if (p._id.status === 'Completed') totalReceived += p.total;
-            else pendingToReceive += p.total;
+        if (p._id === 'send') {
+            totalSent += p.totalAmount;
+            totalSentPaid += p.totalPaid;
+        } else if (p._id === 'receive') {
+            totalReceived += p.totalAmount;
+            totalReceivedPaid += p.totalPaid;
         }
     });
+
+    const pendingToSend = totalSent - totalSentPaid;
+    const pendingToReceive = totalReceived - totalReceivedPaid;
 
     // 4. Total Wallet Balance (Net Worth)
     const wallets = await Wallet.aggregate([
@@ -124,10 +136,14 @@ const getFinancialSummary = async () => {
 
     return {
         totalExpenses,
+        totalExpensesPaid,
+        totalExpensesDue,
         totalIncome,
         totalSent,
-        totalReceived,
+        totalSentPaid,
         pendingToSend,
+        totalReceived,
+        totalReceivedPaid,
         pendingToReceive,
         totalWalletBalance
     };
@@ -223,13 +239,50 @@ const getPeopleSummary = async () => {
 
 const getUpcomingPayments = async () => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const thirtyDaysLater = new Date();
     thirtyDaysLater.setDate(today.getDate() + 30);
 
-    return await Expense.find({
-        nextDueDate: { $gte: today, $lte: thirtyDaysLater },
+    // 1. Expenses Due
+    const expenses = await Expense.find({
+        $or: [
+            { endDate: { $gte: today, $lte: thirtyDaysLater } },
+            { nextDueDate: { $gte: today, $lte: thirtyDaysLater } }
+        ],
         status: { $ne: 'Paid' }
-    }).sort({ nextDueDate: 1 }).limit(5);
+    }).lean();
+
+    // 2. Payments Due (Money I owe)
+    const payments = await Payment.find({
+        type: 'send',
+        endDate: { $gte: today, $lte: thirtyDaysLater },
+        status: { $ne: 'Completed' }
+    }).populate('person').lean();
+
+    // Combine and Normalize
+    const combined = [
+        ...expenses.map(e => ({
+            _id: e._id,
+            title: e.title,
+            amount: e.amount,
+            paidAmount: e.paidAmount,
+            nextDueDate: e.endDate || e.nextDueDate,
+            type: 'expense'
+        })),
+        ...payments.map(p => ({
+            _id: p._id,
+            title: `Pay ${p.person ? p.person.name : 'Unknown'}`,
+            amount: p.amount,
+            paidAmount: p.paidAmount,
+            nextDueDate: p.endDate,
+            type: 'payment'
+        }))
+    ];
+
+    // Sort by due date asc
+    combined.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+
+    return combined.slice(0, 5);
 };
 
 // --- Dashboard ---
@@ -265,7 +318,7 @@ router.get('/', async (req, res) => {
         if (filter === 'all' || filter === 'income') {
             let query = {};
             if (search) query.source = { $regex: search, $options: 'i' };
-            income = await Income.find(query).sort({ date: -1 }).limit(limit).lean();
+            income = await Income.find(query).populate('category').populate('wallet').sort({ date: -1 }).limit(limit).lean();
         }
 
         if (filter === 'all' || filter === 'transfers' || filter === 'people') {
@@ -287,7 +340,7 @@ router.get('/', async (req, res) => {
         recentActivity = [
             ...expenses.map(e => ({ ...e, type: 'expense', sortDate: e.date })),
             ...income.map(i => ({ ...i, type: 'income', sortDate: i.date })),
-            ...payments.map(p => ({ ...p, type: 'payment', sortDate: p.date }))
+            ...payments.map(p => ({ ...p, type: 'payment', paymentType: p.type, sortDate: p.date }))
         ];
 
         // Sort by date desc
@@ -458,10 +511,13 @@ router.get('/people/:id', async (req, res) => {
         // Net Balance > 0: I owe them (Payable)
         // Net Balance < 0: They owe me (Receivable)
 
+        const wallets = await Wallet.find().sort({ name: 1 }).lean();
+
         res.render('admin/finance/people/view', {
             title: person.name,
             person,
             payments,
+            wallets,
             stats: { totalGiven, totalReceived, balance },
             layout: 'layouts/adminLayout'
         });
@@ -586,6 +642,36 @@ router.get('/expenses/delete/:id', async (req, res) => {
     }
 });
 
+// Expense Detail View
+router.get('/expenses/:id', async (req, res) => {
+    try {
+        const expense = await Expense.findById(req.params.id).populate('wallet');
+        const wallets = await Wallet.find().sort({ name: 1 });
+        if (!expense) return res.status(404).send('Expense not found');
+
+        res.render('admin/finance/expenses/view', {
+            title: expense.title,
+            expense,
+            wallets,
+            layout: 'layouts/adminLayout'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Expense Partial Payment
+router.post('/expenses/:id/pay', async (req, res) => {
+    try {
+        await financeHelpers.addExpensePayment(req.params.id, req.body);
+        res.redirect(`/admin/finance/expenses/${req.params.id}`);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
 // --- Income Management ---
 router.get('/income', async (req, res) => {
     try {
@@ -602,15 +688,8 @@ router.get('/income', async (req, res) => {
             }
         }
 
-
-
         console.log('Cache Miss: Income');
-
-        if (require('mongoose').connection.readyState !== 1) {
-            return res.render('offline', { layout: false });
-        }
-
-        const income = await Income.find().populate('wallet').populate('source').sort({ date: -1 });
+        const income = await Income.find().populate('wallet').populate('category').sort({ date: -1 });
 
         // Set Cache (1 hour)
         if (redisClient.isReady) {
@@ -662,7 +741,6 @@ router.post('/income/add', async (req, res) => {
 
 router.get('/income/edit/:id', async (req, res) => {
     try {
-        if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
         const income = await Income.findById(req.params.id);
         const wallets = await Wallet.find().sort({ name: 1 });
         const categories = await Category.find({ type: 'income' }).sort({ name: 1 });
@@ -695,6 +773,23 @@ router.get('/income/delete/:id', async (req, res) => {
         await financeHelpers.deleteIncome(req.params.id);
         if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// Income Detail View
+router.get('/income/:id', async (req, res) => {
+    try {
+        const income = await Income.findById(req.params.id).populate('wallet').populate('category');
+        if (!income) return res.status(404).send('Income not found');
+
+        res.render('admin/finance/income/view', {
+            title: income.source,
+            income,
+            layout: 'layouts/adminLayout'
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
@@ -1054,86 +1149,6 @@ router.post('/categories/delete/:id', async (req, res) => {
     try {
         await financeHelpers.deleteCategory(req.params.id);
         res.redirect('/admin/finance/categories');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-// --- Payment Management ---
-router.get('/payments', async (req, res) => {
-    try {
-        const payments = await Payment.find().populate('person').populate('wallet').sort({ date: -1 });
-        res.render('admin/finance/payments/list', {
-            title: 'Payments',
-            payments,
-            layout: 'layouts/adminLayout'
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-router.get('/payments/add', async (req, res) => {
-    try {
-        const people = await Person.find().sort({ name: 1 });
-        const wallets = await Wallet.find().sort({ name: 1 });
-        res.render('admin/finance/payments/form', {
-            title: 'Add Payment',
-            payment: {},
-            people,
-            wallets,
-            layout: 'layouts/adminLayout'
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-router.post('/payments/add', async (req, res) => {
-    try {
-        await financeHelpers.createPayment(req.body);
-        res.redirect('/admin/finance/payments');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-router.get('/payments/edit/:id', async (req, res) => {
-    try {
-        const payment = await Payment.findById(req.params.id);
-        const people = await Person.find().sort({ name: 1 });
-        const wallets = await Wallet.find().sort({ name: 1 });
-        res.render('admin/finance/payments/form', {
-            title: 'Edit Payment',
-            payment,
-            people,
-            wallets,
-            layout: 'layouts/adminLayout'
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-router.post('/payments/edit/:id', async (req, res) => {
-    try {
-        await financeHelpers.updatePayment(req.params.id, req.body);
-        res.redirect('/admin/finance/payments');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
-    }
-});
-
-router.get('/payments/delete/:id', async (req, res) => {
-    try {
-        await financeHelpers.deletePayment(req.params.id);
-        res.redirect('/admin/finance/payments');
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');

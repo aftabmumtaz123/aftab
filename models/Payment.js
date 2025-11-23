@@ -24,6 +24,9 @@ const paymentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    endDate: {
+        type: Date
+    },
     status: {
         type: String,
         enum: ['Pending', 'Completed', 'Partial', 'Overdue'],
@@ -48,6 +51,10 @@ const paymentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, { toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+paymentSchema.virtual('amountDue').get(function () {
+    return this.amount - (this.paidAmount || 0);
 });
 
 module.exports = mongoose.model('Payment', paymentSchema);

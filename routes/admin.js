@@ -395,6 +395,16 @@ router.post('/sync', async (req, res) => {
                     await adminHelpers.updateConfig(body);
                 } else if (url.includes('/hero')) {
                     await adminHelpers.updateHero(body);
+                } else if (url.includes('/education')) {
+                    if (method === 'POST' && url.endsWith('/education')) {
+                        await adminHelpers.createEducation(body);
+                    } else if (url.includes('/edit')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.updateEducation(id, body);
+                    } else if (url.includes('/delete')) {
+                        const id = url.split('/')[3];
+                        await adminHelpers.deleteEducation(id);
+                    }
                 }
 
                 results.push({ success: true, change });

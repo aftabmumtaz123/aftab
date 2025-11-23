@@ -41,6 +41,9 @@ const expenseSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    endDate: {
+        type: Date
+    },
     // Recurring Logic
     isRecurring: {
         type: Boolean,
@@ -57,6 +60,13 @@ const expenseSchema = new mongoose.Schema({
     notes: {
         type: String
     },
+    paymentHistory: [{
+        amount: Number,
+        date: { type: Date, default: Date.now },
+        method: String,
+        wallet: { type: mongoose.Schema.Types.ObjectId, ref: 'Wallet' },
+        notes: String
+    }],
     attachments: [{
         type: String
     }],
@@ -68,6 +78,10 @@ const expenseSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, { toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+expenseSchema.virtual('amountDue').get(function () {
+    return this.amount - (this.paidAmount || 0);
 });
 
 module.exports = mongoose.model('Expense', expenseSchema);

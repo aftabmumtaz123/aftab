@@ -34,43 +34,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Intercept Forms
-    // Target all forms that modify data (POST methods)
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
+    // Intercept Forms (Event Delegation)
+    document.addEventListener('submit', async (e) => {
+        const form = e.target;
+        if (form.tagName !== 'FORM') return;
+
         // Skip search forms or GET forms
         if (form.method.toUpperCase() === 'GET') return;
 
-        form.addEventListener('submit', async (e) => {
-            if (!navigator.onLine) {
-                e.preventDefault();
+        if (!navigator.onLine) {
+            e.preventDefault();
+            console.log('Offline form submission intercepted:', form.action);
 
-                // Get form data
-                const formData = new FormData(form);
-                const data = Object.fromEntries(formData.entries());
-                const url = form.action;
-                const method = form.method.toUpperCase();
+            // Get form data
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            const url = form.action;
+            const method = form.method.toUpperCase();
 
-                try {
-                    await window.idb.addToSyncQueue(url, method, data);
-                    toast.success('Saved offline! Will sync when online.');
-                    form.reset();
+            try {
+                await window.idb.addToSyncQueue(url, method, data);
+                toast.success('Saved offline! Will sync when online.');
+                form.reset();
 
-                    // If it's a modal form, close it (heuristic: check for close button or parent modal)
-                    const modal = form.closest('.fixed'); // Simple check for tailwind modal
-                    if (modal) {
-                        // Try to find a cancel/close button and click it, or hide it directly
-                        // This is specific to how modals are implemented, assuming standard behavior
-                        // For now, just let the user close it manually or redirect if needed
+                // If it's a modal form, close it
+                // We can try to find the modal by looking up the DOM
+                const modal = form.closest('.fixed');
+                if (modal) {
+                    // If we have a global closeDeleteModal function (which we do for the delete modal), call it
+                    if (window.closeDeleteModal && modal.id === 'delete-modal') {
+                        window.closeDeleteModal();
+                    } else {
+                        // Fallback: hide it manually or look for a close button
+                        modal.classList.add('hidden');
                     }
-
-                    // If it was a redirect-after-post, we might want to simulate that or just stay put
-                    // For now, staying put with a toast is good.
-                } catch (err) {
-                    console.error(err);
-                    toast.error('Error saving offline data.');
                 }
+            } catch (err) {
+                console.error(err);
+                toast.error('Error saving offline data.');
             }
-        });
+        }
     });
 
     // Sync Data
