@@ -90,7 +90,14 @@ self.addEventListener('fetch', event => {
                 })
                 .catch(() => {
                     console.log('[SW] Network failed, checking cache for:', event.request.url);
-                    return caches.match(event.request.url, { ignoreVary: true });
+                    return caches.match(event.request.url, { ignoreVary: true })
+                        .then(cachedResponse => {
+                            if (cachedResponse) {
+                                return cachedResponse;
+                            }
+                            // If not in cache, try to serve offline page
+                            return caches.match('/offline');
+                        });
                 })
         );
         return;

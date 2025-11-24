@@ -76,6 +76,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Clear Cache Functionality ---
+    window.clearCache = async () => {
+        try {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(name => caches.delete(name))
+                );
+                console.log('All caches cleared');
+                toast.success('Cache cleared! Reloading...');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                toast.info('Caching is not supported in this browser.');
+            }
+        } catch (err) {
+            console.error('Error clearing cache:', err);
+            toast.error('Failed to clear cache.');
+        }
+    };
+
     // Sync Data
     const syncData = async () => {
         try {
@@ -124,6 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Clear queue if all syncs successful
             await window.idb.clearSyncQueue();
+
+            // Clear cache to ensure fresh data is fetched
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(name => caches.delete(name))
+                );
+                console.log('Cache cleared after sync');
+            }
+
             toast.success('Sync complete!');
             setTimeout(() => window.location.reload(), 1000);
 

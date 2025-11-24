@@ -10,6 +10,10 @@ const Transfer = require('../models/Transfer');
 const redisClient = require('../config/redis');
 const financeHelpers = require('../utils/financeHelpers');
 const { requireAuth } = require('../middleware/authMiddleware');
+const puppeteer = require('puppeteer');
+const ExcelJS = require('exceljs');
+const ejs = require('ejs');
+const path = require('path');
 
 // Middleware to check auth
 router.use(requireAuth);
@@ -855,27 +859,127 @@ router.get('/reports', async (req, res) => {
     }
 });
 
-router.get('/reports/export', async (req, res) => {
+router.post('/reports/export/pdf', async (req, res) => {
     try {
-        const expenses = await Expense.find().sort({ date: -1 }).lean();
-        const income = await Income.find().sort({ date: -1 }).lean();
+        const summary = await getFinancialSummary();
+        const income = await Income.find().populate('category').sort({ date: -1 });
+        const expenses = await Expense.find().populate('categoryId').sort({ date: -1 });
+        const upcomingPayments = await getUpcomingPayments();
+        const wallets = await Wallet.find();
 
-        let csv = 'Type,Date,Amount,Category/Source,Description\n';
-
-        expenses.forEach(e => {
-            csv += `Expense,${e.date.toISOString().split('T')[0]},${e.amount},${e.category || ''},${e.title}\n`;
+        const html = await ejs.renderFile(path.join(__dirname, '../views/admin/finance/reports/pdf-template.ejs'), {
+            summary,
+            income,
+            expenses,
+            upcomingPayments,
+            wallets,
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
         });
+
+        const browser = await puppeteer.launch({ headless: 'new' });
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+        const pdf = await page.pdf({ format: 'A4', printBackground: true });
+
+        await browser.close();
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdf.length,
+            'Content-Disposition': `attachment; filename="Finance_Report_${new Date().toISOString().split('T')[0]}.pdf"`
+        });
+        res.send(pdf);
+    } catch (err) {
+        console.error('PDF Export Error:', err);
+        res.status(500).json({ success: false, message: 'Failed to generate PDF' });
+    }
+});
+
+router.post('/reports/export/excel', async (req, res) => {
+    try {
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Aftab Dev';
+        workbook.created = new Date();
+
+        // 1. Summary Sheet
+        const summarySheet = workbook.addWorksheet('Summary');
+        const summary = await getFinancialSummary();
+
+        summarySheet.columns = [
+            { header: 'Metric', key: 'metric', width: 30 },
+            { header: 'Value', key: 'value', width: 20 }
+        ];
+
+        summarySheet.addRows([
+            { metric: 'Total Income', value: summary.totalIncome },
+            { metric: 'Total Expenses', value: summary.totalExpenses },
+            { metric: 'Net Savings', value: summary.totalIncome - summary.totalExpenses },
+            { metric: 'Wallet Balance', value: summary.totalWalletBalance },
+            { metric: 'Pending to Receive', value: summary.pendingToReceive },
+            { metric: 'Pending to Pay', value: summary.pendingToSend }
+        ]);
+
+        // Style Summary
+        summarySheet.getRow(1).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+        summarySheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D9488' } };
+
+        // 2. Income Sheet
+        const incomeSheet = workbook.addWorksheet('Income');
+        const income = await Income.find().populate('category').sort({ date: -1 });
+
+        incomeSheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Source', key: 'source', width: 30 },
+            { header: 'Category', key: 'category', width: 20 },
+            { header: 'Amount', key: 'amount', width: 15 }
+        ];
 
         income.forEach(i => {
-            csv += `Income,${i.date.toISOString().split('T')[0]},${i.amount},${i.source || ''},${i.description || ''}\n`;
+            incomeSheet.addRow({
+                date: i.date,
+                source: i.source,
+                category: i.category ? i.category.name : '-',
+                amount: i.amount
+            });
         });
 
-        res.header('Content-Type', 'text/csv');
-        res.attachment('finance_report.csv');
-        return res.send(csv);
+        incomeSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        incomeSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } };
+
+        // 3. Expenses Sheet
+        const expenseSheet = workbook.addWorksheet('Expenses');
+        const expenses = await Expense.find().populate('categoryId').sort({ date: -1 });
+
+        expenseSheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Title', key: 'title', width: 30 },
+            { header: 'Category', key: 'category', width: 20 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Amount', key: 'amount', width: 15 }
+        ];
+
+        expenses.forEach(e => {
+            expenseSheet.addRow({
+                date: e.date,
+                title: e.title,
+                category: e.categoryId ? e.categoryId.name : '-',
+                status: e.status,
+                amount: e.amount
+            });
+        });
+
+        expenseSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        expenseSheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDC2626' } };
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="Finance_Report_${new Date().toISOString().split('T')[0]}.xlsx"`);
+
+        await workbook.xlsx.write(res);
+        res.end();
+
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
+        console.error('Excel Export Error:', err);
+        res.status(500).json({ success: false, message: 'Failed to generate Excel' });
     }
 });
 
@@ -1149,6 +1253,86 @@ router.post('/categories/delete/:id', async (req, res) => {
     try {
         await financeHelpers.deleteCategory(req.params.id);
         res.redirect('/admin/finance/categories');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+// --- Payment Management ---
+router.get('/payments', async (req, res) => {
+    try {
+        const payments = await Payment.find().populate('person').populate('wallet').sort({ date: -1 });
+        res.render('admin/finance/payments/list', {
+            title: 'Payments',
+            payments,
+            layout: 'layouts/adminLayout'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.get('/payments/add', async (req, res) => {
+    try {
+        const people = await Person.find().sort({ name: 1 });
+        const wallets = await Wallet.find().sort({ name: 1 });
+        res.render('admin/finance/payments/form', {
+            title: 'Add Payment',
+            payment: {},
+            people,
+            wallets,
+            layout: 'layouts/adminLayout'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.post('/payments/add', async (req, res) => {
+    try {
+        await financeHelpers.createPayment(req.body);
+        res.redirect('/admin/finance/payments');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.get('/payments/edit/:id', async (req, res) => {
+    try {
+        const payment = await Payment.findById(req.params.id);
+        const people = await Person.find().sort({ name: 1 });
+        const wallets = await Wallet.find().sort({ name: 1 });
+        res.render('admin/finance/payments/form', {
+            title: 'Edit Payment',
+            payment,
+            people,
+            wallets,
+            layout: 'layouts/adminLayout'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.post('/payments/edit/:id', async (req, res) => {
+    try {
+        await financeHelpers.updatePayment(req.params.id, req.body);
+        res.redirect('/admin/finance/payments');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.get('/payments/delete/:id', async (req, res) => {
+    try {
+        await financeHelpers.deletePayment(req.params.id);
+        res.redirect('/admin/finance/payments');
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
