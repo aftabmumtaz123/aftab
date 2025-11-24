@@ -107,6 +107,7 @@ router.get('/resume/print', async (req, res) => {
         const skills = await Skill.find().sort({ level: -1 });
         const education = await Education.find().sort({ startDate: -1 });
         const hero = await HeroSection.findOne();
+        const projects = await Project.find().sort({ createdAt: -1 }); // Fetch projects
 
         // Render without the main layout, as it's a standalone print view
         res.render('resume-print', {
@@ -115,7 +116,8 @@ router.get('/resume/print', async (req, res) => {
             experience,
             skills,
             education,
-            hero
+            hero,
+            projects // Pass projects to view
         });
     } catch (err) {
         console.error(err);
@@ -137,8 +139,12 @@ router.get('/contact', async (req, res) => {
 router.post('/contact', async (req, res) => {
     const { name, email, subject, message } = req.body;
     const nodemailer = require('nodemailer');
+    const Contact = require('../models/Contact'); // Import Contact model
 
     try {
+        // Save to Database
+        await Contact.create({ name, email, subject, message });
+
         // Create transporter
         const transporter = nodemailer.createTransport({
             service: 'gmail', // or your preferred service
@@ -156,14 +162,19 @@ router.post('/contact', async (req, res) => {
             text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
         };
 
-        // Send email
-        await transporter.sendMail(mailOptions);
+        // Send email (optional, wrap in try-catch if you don't want it to fail the request)
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (emailErr) {
+            console.error('Email sending failed:', emailErr);
+            // Continue even if email fails, as we saved to DB
+        }
 
         // Redirect with success message (you might want to add flash messages later)
         // For now, just redirect back to contact
         res.redirect('/contact?success=true');
     } catch (err) {
-        console.error('Email Error:', err);
+        console.error('Contact Error:', err);
         res.redirect('/contact?error=true');
     }
 });

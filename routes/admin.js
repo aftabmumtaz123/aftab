@@ -11,6 +11,7 @@ const Education = require('../models/Education');
 const upload = require('../middleware/uploadMiddleware');
 const { requireAuth } = require('../middleware/authMiddleware');
 const adminHelpers = require('../utils/adminHelpers');
+const Contact = require('../models/Contact'); // Import Contact model
 
 router.use(requireAuth);
 
@@ -332,6 +333,25 @@ router.post('/config', upload.single('aboutImage'), async (req, res) => {
         res.redirect('/admin/config');
     } catch (err) {
         res.status(500).send('Error updating config');
+    }
+});
+
+// --- Contacts (Messages) ---
+router.get('/contacts', async (req, res) => {
+    try {
+        const contacts = await Contact.find().sort({ createdAt: -1 });
+        renderAdmin(res, 'admin/contacts/list', { title: 'Messages', path: '/contacts', contacts });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+router.post('/contacts/:id/delete', async (req, res) => {
+    try {
+        await Contact.findByIdAndDelete(req.params.id);
+        res.redirect('/admin/contacts');
+    } catch (err) {
+        res.status(500).send('Error deleting message');
     }
 });
 
