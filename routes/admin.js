@@ -43,20 +43,60 @@ router.get('/dashboard', async (req, res) => {
         const recentProjects = await Project.find().sort({ _id: -1 }).limit(5);
         const recentSkills = await Skill.find().sort({ _id: -1 }).limit(5);
         const topProjects = await Project.find().sort({ clicks: -1 }).limit(5);
+        const recentContacts = await Contact.find().sort({ createdAt: -1 }).limit(10); // Increased limit for inbox view
+        const unreadCount = await Contact.countDocuments({ read: false });
 
         const data = {
             title: 'Dashboard',
             path: '/dashboard',
-            stats: { projectCount, skillCount, experienceCount, testimonialCount, views: config ? config.views : 0 },
+            stats: { projectCount, skillCount, experienceCount, testimonialCount, views: config ? config.views : 0, unreadCount },
             recentProjects,
             recentSkills,
-            topProjects
+            topProjects,
+            recentContacts
         };
 
         renderAdmin(res, 'admin/dashboard', data);
     } catch (err) {
         console.error(err);
         res.status(500).send('Server Error');
+    }
+});
+
+// ... (Hero Section) ...
+
+// --- Contacts (Messages) ---
+router.get('/contacts', async (req, res) => {
+    try {
+        const contacts = await Contact.find().sort({ createdAt: -1 });
+        const unreadCount = await Contact.countDocuments({ read: false });
+        renderAdmin(res, 'admin/contacts/list', { title: 'Messages', path: '/contacts', contacts, unreadCount });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
+});
+
+router.post('/contacts/:id/read', async (req, res) => {
+    try {
+        await Contact.findByIdAndUpdate(req.params.id, { read: true });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
+});
+
+router.post('/contacts/:id/delete', async (req, res) => {
+    try {
+        await Contact.findByIdAndDelete(req.params.id);
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.json({ success: true });
+        }
+        res.redirect('/admin/contacts');
+    } catch (err) {
+        if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+            return res.status(500).json({ success: false });
+        }
+        res.status(500).send('Error deleting message');
     }
 });
 
@@ -336,24 +376,7 @@ router.post('/config', upload.single('aboutImage'), async (req, res) => {
     }
 });
 
-// --- Contacts (Messages) ---
-router.get('/contacts', async (req, res) => {
-    try {
-        const contacts = await Contact.find().sort({ createdAt: -1 });
-        renderAdmin(res, 'admin/contacts/list', { title: 'Messages', path: '/contacts', contacts });
-    } catch (err) {
-        res.status(500).send('Server Error');
-    }
-});
 
-router.post('/contacts/:id/delete', async (req, res) => {
-    try {
-        await Contact.findByIdAndDelete(req.params.id);
-        res.redirect('/admin/contacts');
-    } catch (err) {
-        res.status(500).send('Error deleting message');
-    }
-});
 
 // Sync Endpoint for Offline Changes
 router.post('/sync', async (req, res) => {

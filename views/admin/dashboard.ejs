@@ -286,7 +286,7 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
     <!-- Recent Projects -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="p-6 border-b border-gray-100 flex justify-between items-center">
@@ -317,7 +317,7 @@
                                 </td>
                                 <td class="px-6 py-4 font-medium text-gray-900"><%= project.title %></td>
                                 <td class="px-6 py-4">
-                                    <form action="/admin/projects/<%= project._id %>/delete" method="POST" class="inline" onsubmit="return confirm('Delete this project?');">
+                                    <form action="/admin/projects/<%= project._id %>/delete" method="POST" class="inline" onsubmit="event.preventDefault(); ui.confirm('Delete Project?', 'Are you sure you want to delete this project?', () => this.submit());">
                                         <button type="submit" class="text-red-500 hover:text-red-700 transition-colors"><i class="fas fa-trash"></i></button>
                                     </form>
                                 </td>
@@ -374,3 +374,334 @@
         </div>
     </div>
 </div>
+
+<!-- Inbox Section -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+    <!-- Inbox Header -->
+    <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <h3 class="font-bold text-gray-800 text-lg">Messages</h3>
+            <span class="bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-full text-xs font-bold" id="unread-count">
+                <%= locals.stats && locals.stats.unreadCount ? stats.unreadCount : 0 %>
+            </span>
+        </div>
+        
+        <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="relative flex-1 md:w-64">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" id="message-search" placeholder="Search messages..." class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+            </div>
+            <select id="message-filter" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
+                <option value="all">All</option>
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Inbox List -->
+    <div class="divide-y divide-gray-50" id="inbox-list">
+        <% if(locals.recentContacts && recentContacts.length > 0) { %>
+            <% recentContacts.forEach(contact => { %>
+                <div class="group hover:bg-slate-50 transition-all duration-200 cursor-pointer relative message-item" 
+                     data-id="<%= contact._id %>"
+                     data-read="<%= contact.read %>"
+                     data-name="<%= contact.name %>"
+                     data-email="<%= contact.email %>"
+                     data-subject="<%= contact.subject %>"
+                     data-message="<%= contact.message %>"
+                     data-date="<%= contact.createdAt %>">
+                    
+                    <div class="p-4 flex items-center gap-4">
+                        <!-- Unread Indicator -->
+                        <div class="w-2 h-2 rounded-full flex-shrink-0 <%= !contact.read ? 'bg-red-500' : 'bg-transparent' %> unread-dot"></div>
+                        
+                        <!-- Avatar -->
+                        <% 
+                            const colors = ['bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-purple-100 text-purple-600', 'bg-orange-100 text-orange-600', 'bg-pink-100 text-pink-600'];
+                            const colorClass = colors[contact.name.length % colors.length];
+                        %>
+                        <div class="w-10 h-10 rounded-full <%= colorClass %> flex items-center justify-center font-bold text-sm flex-shrink-0">
+                            <%= contact.name.charAt(0).toUpperCase() %>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                            <!-- Sender -->
+                            <div class="md:col-span-3">
+                                <p class="font-bold text-gray-900 truncate text-sm <%= !contact.read ? 'font-bold' : 'font-medium' %>"><%= contact.name %></p>
+                                <p class="text-xs text-gray-500 truncate"><%= contact.email %></p>
+                            </div>
+
+                            <!-- Subject & Preview -->
+                            <div class="md:col-span-7">
+                                <p class="text-sm text-gray-900 truncate mb-0.5">
+                                    <span class="<%= !contact.read ? 'font-bold' : 'font-medium' %>"><%= contact.subject %></span>
+                                    <span class="text-gray-400 mx-2">-</span>
+                                    <span class="text-gray-500"><%= contact.message.substring(0, 60) %>...</span>
+                                </p>
+                            </div>
+
+                            <!-- Date & Actions -->
+                            <div class="md:col-span-2 flex items-center justify-end gap-3">
+                                <span class="text-xs text-gray-500 whitespace-nowrap message-date">
+                                    <%= new Date(contact.createdAt).toLocaleDateString() %>
+                                </span>
+                                
+                                <!-- Hover Actions -->
+                                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="openMessageModal(this.closest('.message-item'))" class="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="deleteMessage(event, '<%= contact._id %>')" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-inbox text-3xl text-gray-300"></i>
+                </div>
+                <h3 class="text-gray-900 font-medium mb-1">No messages yet</h3>
+                <p class="text-gray-500 text-sm">When someone contacts you, they'll appear here.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Message Detail Modal -->
+<div id="message-modal" class="fixed inset-0 z-[70] hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="message-modal-backdrop"></div>
+    
+    <!-- Modal Card -->
+    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+        <div class="bg-white w-full max-w-2xl rounded-[20px] shadow-2xl transform scale-95 opacity-0 transition-all duration-300 pointer-events-auto flex flex-col max-h-[90vh]" id="message-modal-card">
+            
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50 rounded-t-[20px]">
+                <div class="flex items-center gap-4">
+                    <button onclick="closeMessageModal()" class="text-gray-400 hover:text-gray-600 transition-colors mr-2">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div id="modal-avatar" class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
+                        A
+                    </div>
+                    <div>
+                        <h3 id="modal-name" class="font-bold text-gray-900 text-lg">Name</h3>
+                        <p id="modal-email" class="text-sm text-gray-500">email@example.com</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p id="modal-date" class="text-sm text-gray-900 font-medium">Date</p>
+                    <p id="modal-time" class="text-xs text-gray-500">Time</p>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="p-8 overflow-y-auto custom-scrollbar">
+                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Subject</h4>
+                <p id="modal-subject" class="text-lg font-bold text-gray-900 mb-8">Subject Line</p>
+                
+                <div class="w-full h-px bg-gray-100 mb-8"></div>
+                
+                <div id="modal-message" class="text-gray-700 leading-relaxed whitespace-pre-wrap text-base">
+                    Message content...
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-[20px] flex justify-between items-center">
+                <a id="modal-reply-btn" href="#" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                    <i class="fas fa-reply"></i> Reply via Email
+                </a>
+                
+                <div class="flex gap-3">
+                    <button onclick="markAsRead()" class="px-4 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors" title="Mark as Read">
+                        <i class="fas fa-check-double mr-2"></i> Mark Read
+                    </button>
+                    <button id="modal-delete-btn" class="px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors" title="Delete">
+                        <i class="fas fa-trash mr-2"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Inbox Logic ---
+    
+    // Smart Date Formatter
+    function formatSmartDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const oneDay = 24 * 60 * 60 * 1000;
+        
+        if (diff < oneDay && now.getDate() === date.getDate()) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (diff < oneDay * 2 && now.getDate() !== date.getDate()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+        }
+    }
+
+    // Initialize Dates
+    document.querySelectorAll('.message-date').forEach(el => {
+        const rawDate = el.closest('.message-item').dataset.date;
+        el.textContent = formatSmartDate(rawDate);
+    });
+
+    // Search & Filter
+    const searchInput = document.getElementById('message-search');
+    const filterSelect = document.getElementById('message-filter');
+    const messageItems = document.querySelectorAll('.message-item');
+
+    function filterMessages() {
+        const query = searchInput.value.toLowerCase();
+        const filter = filterSelect.value;
+
+        messageItems.forEach(item => {
+            const name = item.dataset.name.toLowerCase();
+            const subject = item.dataset.subject.toLowerCase();
+            const isRead = item.dataset.read === 'true';
+            
+            const matchesSearch = name.includes(query) || subject.includes(query);
+            const matchesFilter = filter === 'all' || (filter === 'read' && isRead) || (filter === 'unread' && !isRead);
+
+            if (matchesSearch && matchesFilter) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', filterMessages);
+    filterSelect.addEventListener('change', filterMessages);
+
+    // --- Modal Logic ---
+    let currentMessageId = null;
+    const modal = document.getElementById('message-modal');
+    const backdrop = document.getElementById('message-modal-backdrop');
+    const card = document.getElementById('message-modal-card');
+
+    function openMessageModal(element) {
+        const data = element.dataset;
+        currentMessageId = data.id;
+
+        // Populate Data
+        document.getElementById('modal-name').textContent = data.name;
+        document.getElementById('modal-email').textContent = data.email;
+        document.getElementById('modal-subject').textContent = data.subject;
+        document.getElementById('modal-message').textContent = data.message;
+        
+        // Avatar
+        const avatar = document.getElementById('modal-avatar');
+        avatar.textContent = data.name.charAt(0).toUpperCase();
+        // Copy color class from list item
+        const sourceAvatar = element.querySelector('.w-10.h-10');
+        avatar.className = `w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-2 ${sourceAvatar.classList.value.match(/bg-\w+-100 text-\w+-600/)[0]}`;
+
+        // Date
+        const dateObj = new Date(data.date);
+        document.getElementById('modal-date').textContent = dateObj.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('modal-time').textContent = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Actions
+        document.getElementById('modal-reply-btn').href = `mailto:${data.email}?subject=Re: ${data.subject}`;
+        document.getElementById('modal-delete-btn').onclick = () => {
+            closeMessageModal();
+            ui.confirm('Delete Message?', 'Are you sure you want to delete this message?', () => {
+                submitDelete(currentMessageId);
+            });
+        };
+
+        // Show Modal
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('opacity-0');
+            card.classList.remove('scale-95', 'opacity-0');
+        });
+
+        // Auto-mark as read
+        if (data.read === 'false') {
+            markAsRead(element);
+        }
+    }
+
+    function closeMessageModal() {
+        backdrop.classList.add('opacity-0');
+        card.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            currentMessageId = null;
+        }, 300);
+    }
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target === backdrop) closeMessageModal();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeMessageModal();
+    });
+
+    // Mark as Read Logic
+    async function markAsRead(element = null) {
+        if (!currentMessageId) return;
+
+        try {
+            // Optimistic UI Update
+            const item = element || document.querySelector(`.message-item[data-id="${currentMessageId}"]`);
+            if (item) {
+                item.dataset.read = 'true';
+                item.querySelector('.unread-dot').classList.remove('bg-red-500');
+                item.querySelector('.unread-dot').classList.add('bg-transparent');
+                
+                // Update fonts
+                item.querySelectorAll('.font-bold').forEach(el => {
+                    if(el.tagName === 'P' || el.tagName === 'SPAN') {
+                        el.classList.remove('font-bold');
+                        el.classList.add('font-medium');
+                    }
+                });
+
+                // Update Counter
+                const counter = document.getElementById('unread-count');
+                const currentCount = parseInt(counter.textContent);
+                if (currentCount > 0) counter.textContent = currentCount - 1;
+            }
+
+            // Backend Call
+            await fetch(`/admin/contacts/${currentMessageId}/read`, { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to mark as read', err);
+        }
+    }
+
+    // Delete Logic
+    function deleteMessage(event, id) {
+        event.stopPropagation();
+        ui.confirm('Delete Message?', 'Are you sure you want to delete this message?', () => {
+            submitDelete(id);
+        });
+    }
+
+    function submitDelete(id) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/contacts/${id}/delete`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+</script>
