@@ -1,332 +1,326 @@
-<div class="container mx-auto px-4 py-8">
-    <!-- Inbox Section -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-        <!-- Inbox Header -->
-        <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <h3 class="font-bold text-gray-800 text-lg">Messages</h3>
-                <span class="bg-blue-100 text-blue-600 px-2.5 py-0.5 rounded-full text-xs font-bold" id="unread-count">
-                    <%= locals.unreadCount || 0 %>
-                </span>
-            </div>
-            
-            <div class="flex items-center gap-3 w-full md:w-auto">
-                <div class="relative flex-1 md:w-64">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                    <input type="text" id="message-search" placeholder="Search messages..." class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
-                </div>
-                <select id="message-filter" class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
-                    <option value="all">All</option>
-                    <option value="unread">Unread</option>
-                    <option value="read">Read</option>
-                </select>
-            </div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Header -->
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+        <div class="flex items-center gap-3">
+            <h2 class="text-xl font-bold text-gray-800">Messages</h2>
+            <span class="bg-blue-100 text-blue-600 text-xs font-semibold px-2.5 py-1 rounded-full"><%= contacts.length %></span>
         </div>
-
-        <!-- Inbox List -->
-        <div class="divide-y divide-gray-50" id="inbox-list">
-            <% if(contacts && contacts.length > 0) { %>
-                <% contacts.forEach(contact => { %>
-                    <div class="group hover:bg-slate-50 transition-all duration-200 cursor-pointer relative message-item" 
-                         data-id="<%= contact._id %>"
-                         data-read="<%= contact.read %>"
-                         data-name="<%= contact.name %>"
-                         data-email="<%= contact.email %>"
-                         data-subject="<%= contact.subject %>"
-                         data-message="<%= contact.message %>"
-                         data-date="<%= contact.createdAt %>">
-                        
-                        <div class="p-4 flex items-center gap-4">
-                            <!-- Unread Indicator -->
-                            <div class="w-2 h-2 rounded-full flex-shrink-0 <%= !contact.read ? 'bg-red-500' : 'bg-transparent' %> unread-dot"></div>
-                            
-                            <!-- Avatar -->
-                            <% 
-                                const colors = ['bg-blue-100 text-blue-600', 'bg-green-100 text-green-600', 'bg-purple-100 text-purple-600', 'bg-orange-100 text-orange-600', 'bg-pink-100 text-pink-600'];
-                                const colorClass = colors[contact.name.length % colors.length];
-                            %>
-                            <div class="w-10 h-10 rounded-full <%= colorClass %> flex items-center justify-center font-bold text-sm flex-shrink-0">
-                                <%= contact.name.charAt(0).toUpperCase() %>
+        <div class="flex items-center gap-3">
+            <!-- Search -->
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                <input type="text" id="searchMessages" placeholder="Search messages..." class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64">
+            </div>
+            <!-- Filter Dropdown -->
+            <select id="filterMessages" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="all">All</option>
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Messages List -->
+    <div class="divide-y divide-gray-100">
+        <% if(contacts.length > 0) { %>
+            <% contacts.forEach((contact, index) => { 
+                // Generate avatar color based on name
+                const colors = ['bg-purple-100 text-purple-600', 'bg-green-100 text-green-600', 'bg-blue-100 text-blue-600', 'bg-pink-100 text-pink-600', 'bg-yellow-100 text-yellow-600'];
+                const avatarColor = colors[index % colors.length];
+                const initial = contact.name.charAt(0).toUpperCase();
+                const isUnread = index === 2; // Example: third message is unread
+            %>
+                <div class="message-item p-4 hover:bg-gray-50 hover:shadow-sm transition-all cursor-pointer relative <%= isUnread ? 'bg-blue-50/30' : '' %>" 
+                     data-name="<%= contact.name.toLowerCase() %>" 
+                     data-email="<%= contact.email.toLowerCase() %>" 
+                     data-message="<%= contact.message.toLowerCase() %>" 
+                     data-read="<%= !isUnread %>"
+                     data-contact-id="<%= contact._id %>"
+                     data-contact-name="<%= contact.name %>"
+                     data-contact-email="<%= contact.email %>"
+                     data-contact-message="<%= contact.message %>"
+                     data-contact-date="<%= contact.createdAt %>">
+                    <!-- Unread indicator -->
+                    <% if(isUnread) { %>
+                        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full unread-dot"></div>
+                    <% } %>
+                    
+                    <div class="flex items-start gap-4 ml-4">
+                        <!-- Avatar -->
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full <%= avatarColor %> flex items-center justify-center font-semibold text-lg">
+                                <%= initial %>
                             </div>
-
-                            <!-- Content -->
-                            <div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                                <!-- Sender -->
-                                <div class="md:col-span-3">
-                                    <p class="font-bold text-gray-900 truncate text-sm <%= !contact.read ? 'font-bold' : 'font-medium' %>"><%= contact.name %></p>
-                                    <p class="text-xs text-gray-500 truncate"><%= contact.email %></p>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-4 mb-1">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 text-sm"><%= contact.name %></h3>
+                                    <p class="text-xs text-gray-500"><%= contact.email %></p>
                                 </div>
-
-                                <!-- Subject & Preview -->
-                                <div class="md:col-span-7">
-                                    <p class="text-sm text-gray-900 truncate mb-0.5">
-                                        <span class="<%= !contact.read ? 'font-bold' : 'font-medium' %>"><%= contact.subject %></span>
-                                        <span class="text-gray-400 mx-2">-</span>
-                                        <span class="text-gray-500"><%= contact.message.substring(0, 60) %>...</span>
+                                <span class="text-xs text-gray-400 flex-shrink-0">
+                                    <% 
+                                        const date = new Date(contact.createdAt);
+                                        const today = new Date();
+                                        const yesterday = new Date(today);
+                                        yesterday.setDate(yesterday.getDate() - 1);
+                                        
+                                        if(date.toDateString() === today.toDateString()) {
+                                    %>
+                                        Today
+                                    <% } else if(date.toDateString() === yesterday.toDateString()) { %>
+                                        Yesterday
+                                    <% } else { %>
+                                        <%= date.toLocaleDateString() %>
+                                    <% } %>
+                                </span>
+                            </div>
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-900 font-medium mb-1 truncate">
+                                        <%= contact.message.split('\n')[0].substring(0, 50) %>
+                                    </p>
+                                    <p class="text-sm text-gray-500 truncate">
+                                        <%= contact.message.length > 80 ? contact.message.substring(0, 80) + '...' : contact.message %>
                                     </p>
                                 </div>
-
-                                <!-- Date & Actions -->
-                                <div class="md:col-span-2 flex items-center justify-end gap-3">
-                                    <span class="text-xs text-gray-500 whitespace-nowrap message-date">
-                                        <%= new Date(contact.createdAt).toLocaleDateString() %>
-                                    </span>
-                                    
-                                    <!-- Hover Actions -->
-                                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onclick="openMessageModal(this.closest('.message-item'))" class="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="View">
-                                            <i class="fas fa-eye"></i>
+                                <!-- Actions (visible on hover) -->
+                                <div class="flex items-center gap-2 opacity-0 message-actions transition-opacity">
+                                    <button onclick="openMessageModal(this)" class="text-blue-500 hover:text-blue-700 p-2 rounded-md hover:bg-blue-50 transition-colors" title="View message">
+                                        <i class="fas fa-eye text-sm"></i>
+                                    </button>
+                                    <form action="/admin/contacts/<%= contact._id %>/delete" method="POST" class="inline">
+                                        <button type="button" onclick="openDeleteModal(this.closest('form'))" class="text-red-400 hover:text-red-600 p-2 rounded-md hover:bg-red-50 transition-colors" title="Delete">
+                                            <i class="fas fa-trash-alt text-sm"></i>
                                         </button>
-                                        <button onclick="deleteMessage(event, '<%= contact._id %>')" class="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
                     </div>
-                <% }) %>
-            <% } else { %>
-                <div class="flex flex-col items-center justify-center py-16 text-center">
-                    <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-inbox text-3xl text-gray-300"></i>
-                    </div>
-                    <h3 class="text-gray-900 font-medium mb-1">No messages yet</h3>
-                    <p class="text-gray-500 text-sm">When someone contacts you, they'll appear here.</p>
                 </div>
-            <% } %>
-        </div>
+            <% }) %>
+        <% } else { %>
+            <div class="p-12 text-center text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                <p class="text-lg font-medium mb-1">No messages yet</p>
+                <p class="text-sm">When someone contacts you, they'll appear here.</p>
+            </div>
+        <% } %>
     </div>
 </div>
 
 <!-- Message Detail Modal -->
-<div id="message-modal" class="fixed inset-0 z-[70] hidden">
-    <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity opacity-0" id="message-modal-backdrop"></div>
-    
-    <!-- Modal Card -->
-    <div class="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
-        <div class="bg-white w-full max-w-2xl rounded-[20px] shadow-2xl transform scale-95 opacity-0 transition-all duration-300 pointer-events-auto flex flex-col max-h-[90vh]" id="message-modal-card">
-            
-            <!-- Header -->
-            <div class="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50 rounded-t-[20px]">
-                <div class="flex items-center gap-4">
-                    <button onclick="closeMessageModal()" class="text-gray-400 hover:text-gray-600 transition-colors mr-2">
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                    <div id="modal-avatar" class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
-                        A
-                    </div>
-                    <div>
-                        <h3 id="modal-name" class="font-bold text-gray-900 text-lg">Name</h3>
-                        <p id="modal-email" class="text-sm text-gray-500">email@example.com</p>
+<div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeMessageModal(event)">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-100">
+            <div class="flex items-start gap-4">
+                <button onclick="closeMessageModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left text-lg"></i>
+                </button>
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div id="modalAvatar" class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-semibold text-lg">
+                            T
+                        </div>
+                        <div>
+                            <h3 id="modalName" class="font-bold text-gray-900 text-lg">Taaha Haider</h3>
+                            <p id="modalEmail" class="text-sm text-gray-500">admin@gmail.com</p>
+                        </div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <p id="modal-date" class="text-sm text-gray-900 font-medium">Date</p>
-                    <p id="modal-time" class="text-xs text-gray-500">Time</p>
+                    <p id="modalDate" class="text-xs text-gray-400">November 24, 2025</p>
+                    <p id="modalTime" class="text-xs text-gray-400">10:33 PM</p>
                 </div>
             </div>
-
-            <!-- Body -->
-            <div class="p-8 overflow-y-auto custom-scrollbar">
-                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Subject</h4>
-                <p id="modal-subject" class="text-lg font-bold text-gray-900 mb-8">Subject Line</p>
-                
-                <div class="w-full h-px bg-gray-100 mb-8"></div>
-                
-                <div id="modal-message" class="text-gray-700 leading-relaxed whitespace-pre-wrap text-base">
-                    Message content...
-                </div>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto max-h-[50vh]">
+            <div class="mb-4">
+                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Subject</p>
+                <h4 id="modalSubject" class="text-lg font-bold text-gray-900">Want to earn more money</h4>
             </div>
+            
+            <div class="border-t border-gray-200 pt-4">
+                <p id="modalMessage" class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    Hi Aftab,
 
-            <!-- Footer -->
-            <div class="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-[20px] flex justify-between items-center">
-                <a id="modal-reply-btn" href="#" class="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2">
-                    <i class="fas fa-reply"></i> Reply via Email
-                </a>
-                
-                <div class="flex gap-3">
-                    <button onclick="markAsRead()" class="px-4 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors" title="Mark as Read">
-                        <i class="fas fa-check-double mr-2"></i> Mark Read
-                    </button>
-                    <button id="modal-delete-btn" class="px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl font-medium transition-colors" title="Delete">
-                        <i class="fas fa-trash mr-2"></i> Delete
-                    </button>
-                </div>
+I saw your portfolio and really liked your full-stack projects.
+Are you available for freelance work?
+
+Looking forward to your reply!
+
+Best,
+Taaha Haider
+                </p>
+            </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+            <button id="replyButton" onclick="replyToMessage()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-medium">
+                <i class="fas fa-reply"></i>
+                Reply via Email
+            </button>
+            <div class="flex items-center gap-2">
+                <button id="markReadButton" onclick="markAsReadFromModal()" class="text-gray-600 hover:text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
+                    <i class="fas fa-check"></i>
+                    Mark as Read
+                </button>
+                <button id="deleteButton" onclick="deleteFromModal()" class="text-red-600 hover:text-red-700 px-4 py-2.5 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2">
+                    <i class="fas fa-trash-alt"></i>
+                    Delete
+                </button>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+.message-item:hover .message-actions {
+    opacity: 1;
+}
+</style>
+
 <script>
-    // --- Inbox Logic ---
+let currentMessageItem = null;
+
+// Search functionality
+document.getElementById('searchMessages')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const messages = document.querySelectorAll('.message-item');
     
-    // Smart Date Formatter
-    function formatSmartDate(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diff = now - date;
-        const oneDay = 24 * 60 * 60 * 1000;
+    messages.forEach(message => {
+        const name = message.dataset.name;
+        const email = message.dataset.email;
+        const messageText = message.dataset.message;
         
-        if (diff < oneDay && now.getDate() === date.getDate()) {
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else if (diff < oneDay * 2 && now.getDate() !== date.getDate()) {
-            return 'Yesterday';
+        if(name.includes(searchTerm) || email.includes(searchTerm) || messageText.includes(searchTerm)) {
+            message.style.display = '';
         } else {
-            return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+            message.style.display = 'none';
         }
-    }
-
-    // Initialize Dates
-    document.querySelectorAll('.message-date').forEach(el => {
-        const rawDate = el.closest('.message-item').dataset.date;
-        el.textContent = formatSmartDate(rawDate);
     });
+});
 
-    // Search & Filter
-    const searchInput = document.getElementById('message-search');
-    const filterSelect = document.getElementById('message-filter');
-    const messageItems = document.querySelectorAll('.message-item');
-
-    function filterMessages() {
-        const query = searchInput.value.toLowerCase();
-        const filter = filterSelect.value;
-
-        messageItems.forEach(item => {
-            const name = item.dataset.name.toLowerCase();
-            const subject = item.dataset.subject.toLowerCase();
-            const isRead = item.dataset.read === 'true';
-            
-            const matchesSearch = name.includes(query) || subject.includes(query);
-            const matchesFilter = filter === 'all' || (filter === 'read' && isRead) || (filter === 'unread' && !isRead);
-
-            if (matchesSearch && matchesFilter) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-    }
-
-    searchInput.addEventListener('input', filterMessages);
-    filterSelect.addEventListener('change', filterMessages);
-
-    // --- Modal Logic ---
-    let currentMessageId = null;
-    const modal = document.getElementById('message-modal');
-    const backdrop = document.getElementById('message-modal-backdrop');
-    const card = document.getElementById('message-modal-card');
-
-    function openMessageModal(element) {
-        const data = element.dataset;
-        currentMessageId = data.id;
-
-        // Populate Data
-        document.getElementById('modal-name').textContent = data.name;
-        document.getElementById('modal-email').textContent = data.email;
-        document.getElementById('modal-subject').textContent = data.subject;
-        document.getElementById('modal-message').textContent = data.message;
+// Filter functionality
+document.getElementById('filterMessages')?.addEventListener('change', function(e) {
+    const filter = e.target.value;
+    const messages = document.querySelectorAll('.message-item');
+    
+    messages.forEach(message => {
+        const isRead = message.dataset.read === 'true';
         
-        // Avatar
-        const avatar = document.getElementById('modal-avatar');
-        avatar.textContent = data.name.charAt(0).toUpperCase();
-        // Copy color class from list item
-        const sourceAvatar = element.querySelector('.w-10.h-10');
-        avatar.className = `w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mr-2 ${sourceAvatar.classList.value.match(/bg-\w+-100 text-\w+-600/)[0]}`;
-
-        // Date
-        const dateObj = new Date(data.date);
-        document.getElementById('modal-date').textContent = dateObj.toLocaleDateString([], { day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('modal-time').textContent = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        // Actions
-        document.getElementById('modal-reply-btn').href = `mailto:${data.email}?subject=Re: ${data.subject}`;
-        document.getElementById('modal-delete-btn').onclick = () => {
-            closeMessageModal();
-            ui.confirm('Delete Message?', 'Are you sure you want to delete this message?', () => {
-                submitDelete(currentMessageId);
-            });
-        };
-
-        // Show Modal
-        modal.classList.remove('hidden');
-        requestAnimationFrame(() => {
-            backdrop.classList.remove('opacity-0');
-            card.classList.remove('scale-95', 'opacity-0');
-        });
-
-        // Auto-mark as read
-        if (data.read === 'false') {
-            markAsRead(element);
+        if(filter === 'all') {
+            message.style.display = '';
+        } else if(filter === 'unread' && !isRead) {
+            message.style.display = '';
+        } else if(filter === 'read' && isRead) {
+            message.style.display = '';
+        } else {
+            message.style.display = 'none';
         }
-    }
-
-    function closeMessageModal() {
-        backdrop.classList.add('opacity-0');
-        card.classList.add('scale-95', 'opacity-0');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            currentMessageId = null;
-        }, 300);
-    }
-
-    // Close on backdrop click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal || e.target === backdrop) closeMessageModal();
     });
+});
 
-    // Close on Escape
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeMessageModal();
-    });
+// Open message modal
+function openMessageModal(button) {
+    const messageItem = button.closest('.message-item');
+    currentMessageItem = messageItem;
+    
+    const name = messageItem.dataset.contactName;
+    const email = messageItem.dataset.contactEmail;
+    const message = messageItem.dataset.contactMessage;
+    const dateStr = messageItem.dataset.contactDate;
+    const contactId = messageItem.dataset.contactId;
+    
+    // Get avatar info
+    const avatarDiv = messageItem.querySelector('.w-12.h-12');
+    const avatarClasses = avatarDiv.className;
+    const initial = avatarDiv.textContent.trim();
+    
+    // Update modal content
+    document.getElementById('modalAvatar').className = avatarDiv.className;
+    document.getElementById('modalAvatar').textContent = initial;
+    document.getElementById('modalName').textContent = name;
+    document.getElementById('modalEmail').textContent = email;
+    
+    // Format date
+    const date = new Date(dateStr);
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    const timeOptions = { hour: '2-digit', minute: '2-digit' };
+    document.getElementById('modalDate').textContent = date.toLocaleDateString('en-US', dateOptions);
+    document.getElementById('modalTime').textContent = date.toLocaleTimeString('en-US', timeOptions);
+    
+    // Set subject (first line of message)
+    const subject = message.split('\n')[0];
+    document.getElementById('modalSubject').textContent = subject;
+    document.getElementById('modalMessage').textContent = message;
+    
+    // Store contact ID for actions
+    document.getElementById('replyButton').dataset.email = email;
+    document.getElementById('deleteButton').dataset.contactId = contactId;
+    
+    // Show modal
+    const modal = document.getElementById('messageModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Mark as read automatically
+    markMessageAsRead(messageItem);
+}
 
-    // Mark as Read Logic
-    async function markAsRead(element = null) {
-        if (!currentMessageId) return;
+// Close message modal
+function closeMessageModal(event) {
+    if(event && event.target !== event.currentTarget) return;
+    const modal = document.getElementById('messageModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentMessageItem = null;
+}
 
-        try {
-            // Optimistic UI Update
-            const item = element || document.querySelector(`.message-item[data-id="${currentMessageId}"]`);
-            if (item) {
-                item.dataset.read = 'true';
-                item.querySelector('.unread-dot').classList.remove('bg-red-500');
-                item.querySelector('.unread-dot').classList.add('bg-transparent');
-                
-                // Update fonts
-                item.querySelectorAll('.font-bold').forEach(el => {
-                    if(el.tagName === 'P' || el.tagName === 'SPAN') {
-                        el.classList.remove('font-bold');
-                        el.classList.add('font-medium');
-                    }
-                });
+// Mark message as read
+function markMessageAsRead(messageItem) {
+    messageItem.dataset.read = 'true';
+    messageItem.classList.remove('bg-blue-50/30');
+    const indicator = messageItem.querySelector('.unread-dot');
+    if(indicator) indicator.remove();
+}
 
-                // Update Counter
-                const counter = document.getElementById('unread-count');
-                const currentCount = parseInt(counter.textContent);
-                if (currentCount > 0) counter.textContent = currentCount - 1;
-            }
-
-            // Backend Call
-            await fetch(`/admin/contacts/${currentMessageId}/read`, { method: 'POST' });
-        } catch (err) {
-            console.error('Failed to mark as read', err);
-        }
+// Mark as read from modal
+function markAsReadFromModal() {
+    if(currentMessageItem) {
+        markMessageAsRead(currentMessageItem);
     }
+    closeMessageModal();
+}
 
-    // Delete Logic
-    function deleteMessage(event, id) {
-        event.stopPropagation();
-        ui.confirm('Delete Message?', 'Are you sure you want to delete this message?', () => {
-            submitDelete(id);
-        });
-    }
+// Reply to message
+function replyToMessage() {
+    const email = document.getElementById('replyButton').dataset.email;
+    const subject = document.getElementById('modalSubject').textContent;
+    window.location.href = `mailto:${email}?subject=Re: ${encodeURIComponent(subject)}`;
+}
 
-    function submitDelete(id) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/contacts/${id}/delete`;
-        document.body.appendChild(form);
-        form.submit();
+// Delete from modal
+function deleteFromModal() {
+    const contactId = document.getElementById('deleteButton').dataset.contactId;
+    const form = document.querySelector(`form[action="/admin/contacts/${contactId}/delete"]`);
+    if(form) {
+        closeMessageModal();
+        openDeleteModal(form);
     }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if(e.key === 'Escape') {
+        closeMessageModal();
+    }
+});
 </script>
