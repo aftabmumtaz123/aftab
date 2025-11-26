@@ -209,6 +209,12 @@ const financeHelpers = {
         return person;
     },
 
+    deletePerson: async (id) => {
+        const person = await Person.findByIdAndDelete(id);
+        if (redisClient?.isReady) await redisClient.del('finance:people');
+        return person;
+    },
+
     // --- Categories ---
     createCategory: async (data) => {
         const category = await Category.create(data);

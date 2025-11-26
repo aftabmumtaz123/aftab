@@ -488,6 +488,16 @@ router.post('/people/edit/:id', async (req, res) => {
     }
 });
 
+router.get('/people/delete/:id', async (req, res) => {
+    try {
+        await financeHelpers.deletePerson(req.params.id);
+        res.redirect('/admin/finance/people');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Server Error');
+    }
+});
+
 
 
 router.get('/people/:id', async (req, res) => {
