@@ -394,18 +394,20 @@ router.get('/people', async (req, res) => {
             return res.render('offline', { layout: false });
         }
 
-        // Optimized: Use aggregation to calculate balances in one query
+        // Optimized: Use aggregation to calculate balances and get last transaction
         const peopleWithBalances = await Person.aggregate([
             {
                 $lookup: {
                     from: 'payments',
                     localField: '_id',
                     foreignField: 'person',
+                    pipeline: [{ $sort: { date: -1 } }], // Sort payments by date desc
                     as: 'payments'
                 }
             },
             {
                 $addFields: {
+                    lastTransaction: { $arrayElemAt: ['$payments', 0] },
                     totalGiven: {
                         $sum: {
                             $map: {
@@ -430,8 +432,33 @@ router.get('/people', async (req, res) => {
                 }
             },
             { $sort: { name: 1 } },
-            { $project: { payments: 0 } } // Remove payments array from output
+            { $project: { payments: 0 } }
         ]);
+
+        // --- Calculate Dashboard Metrics ---
+        let totalLent = 0;
+        let totalBorrowed = 0;
+        const totalPeople = peopleWithBalances.length;
+
+        peopleWithBalances.forEach(p => {
+            if (p.balance < 0) totalLent += Math.abs(p.balance);
+            else if (p.balance > 0) totalBorrowed += p.balance;
+        });
+
+        const netPosition = totalLent - totalBorrowed;
+
+        // Top 5 Who Owe You (Lowest negative balance -> Largest absolute debt)
+        const topDebtors = peopleWithBalances
+            .filter(p => p.balance < 0)
+            .sort((a, b) => a.balance - b.balance) // Ascending (e.g. -500 before -100)
+            .slice(0, 5)
+            .map(p => ({ ...p, absBalance: Math.abs(p.balance) }));
+
+        // Top 5 You Owe (Highest positive balance)
+        const topCreditors = peopleWithBalances
+            .filter(p => p.balance > 0)
+            .sort((a, b) => b.balance - a.balance) // Descending
+            .slice(0, 5);
 
         // Set Cache (1 hour)
         if (redisClient.isReady) {
@@ -443,8 +470,18 @@ router.get('/people', async (req, res) => {
         }
 
         res.render('admin/finance/people/list', {
-            title: 'People',
+            title: 'People Management',
             people: peopleWithBalances,
+            dashboard: {
+                metrics: {
+                    count: totalPeople,
+                    lent: totalLent,
+                    borrowed: totalBorrowed,
+                    net: netPosition
+                },
+                topDebtors,
+                topCreditors
+            },
             layout: 'layouts/adminLayout'
         });
     } catch (err) {
@@ -922,55 +959,161 @@ router.get('/income/:id', async (req, res) => {
 // --- Reports ---
 router.get('/reports', async (req, res) => {
     try {
-        // Monthly Expenses
-        const monthlyExpenses = await Expense.aggregate([
+        // --- Advanced Report Metrics ---
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        // 1. Summary Cards (This Month)
+        const thisMonthIncome = await Income.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalIncome = thisMonthIncome.length ? thisMonthIncome[0].total : 0;
+
+        const thisMonthExpense = await Expense.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalExpense = thisMonthExpense.length ? thisMonthExpense[0].total : 0;
+
+        const netSavings = totalIncome - totalExpense;
+
+        // Wallet Balance
+        const wallets = await Wallet.aggregate([
+            { $group: { _id: null, total: { $sum: "$balance" } } }
+        ]);
+        const walletBalance = wallets.length ? wallets[0].total : 0;
+
+        // Trends (vs Last Month)
+        const lastMonthIncome = await Income.aggregate([
+            { $match: { date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const lmIncome = lastMonthIncome.length ? lastMonthIncome[0].total : 0;
+        const incomeTrend = lmIncome === 0 ? 100 : Math.round(((totalIncome - lmIncome) / lmIncome) * 100);
+
+        const lastMonthExpenseAgg = await Expense.aggregate([
+            { $match: { date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const lmExpense = lastMonthExpenseAgg.length ? lastMonthExpenseAgg[0].total : 0;
+        const expenseTrend = lmExpense === 0 ? 100 : Math.round(((totalExpense - lmExpense) / lmExpense) * 100);
+
+        // 2. Charts Data
+        // Income vs Expense (Last 12 Months)
+        const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+        const monthlyStats = await Expense.aggregate([
+            { $match: { date: { $gte: twelveMonthsAgo } } },
             {
                 $group: {
-                    _id: { $month: "$date" },
-                    total: { $sum: "$amount" }
+                    _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+                    expense: { $sum: "$amount" }
                 }
             },
-            { $sort: { "_id": 1 } }
+            { $sort: { "_id.year": 1, "_id.month": 1 } }
         ]);
 
-        // Category Breakdown
-        const categoryExpenses = await Expense.aggregate([
+        const monthlyIncomeStats = await Income.aggregate([
+            { $match: { date: { $gte: twelveMonthsAgo } } },
             {
                 $group: {
-                    _id: "$category",
-                    total: { $sum: "$amount" }
-                }
-            }
-        ]);
-
-        // Yearly Expenses
-        const yearlyExpenses = await Expense.aggregate([
-            {
-                $group: {
-                    _id: { $year: "$date" },
-                    total: { $sum: "$amount" }
+                    _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+                    income: { $sum: "$amount" }
                 }
             },
-            { $sort: { "_id": 1 } }
+            { $sort: { "_id.year": 1, "_id.month": 1 } }
         ]);
 
-        // Wallet-wise Expenses
-        const walletExpenses = await Expense.aggregate([
-            {
-                $group: {
-                    _id: "$wallet",
-                    total: { $sum: "$amount" }
-                }
-            }
+        // Merge and Format for Chart
+        const chartLabels = [];
+        const chartIncome = [];
+        const chartExpense = [];
+
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const label = d.toLocaleString('default', { month: 'short' });
+            chartLabels.push(label);
+
+            const year = d.getFullYear();
+            const month = d.getMonth() + 1;
+
+            const inc = monthlyIncomeStats.find(s => s._id.year === year && s._id.month === month);
+            chartIncome.push(inc ? inc.income : 0);
+
+            const exp = monthlyStats.find(s => s._id.year === year && s._id.month === month);
+            chartExpense.push(exp ? exp.expense : 0);
+        }
+
+        // Category Breakdown (This Month)
+        const categoryBreakdown = await Expense.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: "$category", total: { $sum: "$amount" } } },
+            { $sort: { total: -1 } }
         ]);
-        await Wallet.populate(walletExpenses, { path: "_id", select: "name" });
+
+        // Top 5 Expenses (This Month)
+        const topExpenses = await Expense.find({ date: { $gte: startOfMonth } })
+            .sort({ amount: -1 })
+            .limit(5)
+            .lean();
+
+        // Wallet Breakdown (This Month)
+        const walletBreakdown = await Expense.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: "$wallet", total: { $sum: "$amount" } } }
+        ]);
+        await Wallet.populate(walletBreakdown, { path: "_id", select: "name" });
+
+        // Savings Rate
+        const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0;
+
+        // Quick Insights
+        // Highest Expense Day
+        const dailyExpenses = await Expense.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: { $dayOfMonth: "$date" }, total: { $sum: "$amount" } } },
+            { $sort: { total: -1 } },
+            { $limit: 1 }
+        ]);
+        const highestExpenseDay = dailyExpenses.length ? dailyExpenses[0]._id : '-';
+
+        // Avg Daily Spend
+        const daysPassed = now.getDate();
+        const avgDailySpend = Math.round(totalExpense / daysPassed);
+
+        // Projected Total
+        const projectedTotal = Math.round(avgDailySpend * new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
 
         res.render('admin/finance/reports/index', {
             title: 'Financial Reports',
-            monthlyExpenses,
-            categoryExpenses,
-            yearlyExpenses,
-            walletExpenses,
+            dashboard: {
+                metrics: {
+                    income: { total: totalIncome, trend: incomeTrend },
+                    expense: { total: totalExpense, trend: expenseTrend },
+                    savings: { total: netSavings, rate: savingsRate },
+                    balance: walletBalance
+                },
+                charts: {
+                    trend: { labels: chartLabels, income: chartIncome, expense: chartExpense },
+                    categories: categoryBreakdown,
+                    monthlyComparison: {
+                        thisMonth: { income: totalIncome, expense: totalExpense },
+                        lastMonth: { income: lmIncome, expense: lmExpense }
+                    }
+                },
+                lists: {
+                    topExpenses,
+                    walletBreakdown
+                },
+                insights: {
+                    highestDay: highestExpenseDay,
+                    avgDaily: avgDailySpend,
+                    projected: projectedTotal,
+                    biggestCategory: categoryBreakdown.length ? categoryBreakdown[0]._id : '-'
+                }
+            },
             layout: 'layouts/adminLayout'
         });
     } catch (err) {
@@ -979,7 +1122,7 @@ router.get('/reports', async (req, res) => {
     }
 });
 
-router.post('/reports/export/pdf', async (req, res) => {
+router.get('/reports/export/pdf', async (req, res) => {
     try {
         const summary = await getFinancialSummary();
         const income = await Income.find().populate('category').sort({ date: -1 });
@@ -1015,7 +1158,7 @@ router.post('/reports/export/pdf', async (req, res) => {
     }
 });
 
-router.post('/reports/export/excel', async (req, res) => {
+router.get('/reports/export/excel', async (req, res) => {
     try {
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Aftab Dev';
@@ -1383,9 +1526,106 @@ router.post('/categories/delete/:id', async (req, res) => {
 router.get('/payments', async (req, res) => {
     try {
         const payments = await Payment.find().populate('person').populate('wallet').sort({ date: -1 });
+
+        // --- Calculate Dashboard Metrics ---
+        let totalSent = 0;
+        let totalReceived = 0;
+        let pendingAmount = 0;
+        let pendingCount = 0;
+
+        // For Charts
+        const now = new Date();
+        const cashFlow = Array(6).fill(0).map(() => ({ sent: 0, received: 0 })); // Last 6 months
+
+        // For Top People
+        const peopleStats = {};
+
+        payments.forEach(p => {
+            const amount = p.amount || 0;
+
+            // 1. Summary Metrics
+            if (p.type === 'send') {
+                totalSent += amount;
+            } else if (p.type === 'receive') {
+                totalReceived += amount;
+            }
+
+            if (p.status === 'Pending') {
+                pendingAmount += amount;
+                pendingCount++;
+            }
+
+            // 2. Cash Flow (Last 6 Months)
+            const pDate = new Date(p.date);
+            const monthsAgo = (now.getFullYear() - pDate.getFullYear()) * 12 + (now.getMonth() - pDate.getMonth());
+
+            if (monthsAgo >= 0 && monthsAgo < 6) {
+                // 0 = this month, 5 = 5 months ago
+                // We want to store it so index 5 is this month, 0 is 5 months ago for the chart
+                if (p.type === 'send') cashFlow[5 - monthsAgo].sent += amount;
+                else if (p.type === 'receive') cashFlow[5 - monthsAgo].received += amount;
+            }
+
+            // 3. Top People
+            if (p.person) {
+                const pid = p.person._id.toString();
+                if (!peopleStats[pid]) {
+                    peopleStats[pid] = {
+                        name: p.person.name,
+                        avatar: p.person.avatar || null, // Assuming avatar field exists or handle in frontend
+                        sent: 0,
+                        received: 0,
+                        lastTransaction: p.date
+                    };
+                }
+                if (p.type === 'send') peopleStats[pid].sent += amount;
+                else if (p.type === 'receive') peopleStats[pid].received += amount;
+
+                // Update last transaction if this one is newer
+                if (new Date(p.date) > new Date(peopleStats[pid].lastTransaction)) {
+                    peopleStats[pid].lastTransaction = p.date;
+                }
+            }
+        });
+
+        const netBalance = totalReceived - totalSent;
+
+        // Process Top People
+        const topPeople = Object.values(peopleStats)
+            .map(p => ({
+                ...p,
+                net: p.received - p.sent,
+                volume: p.received + p.sent
+            }))
+            .sort((a, b) => b.volume - a.volume) // Sort by total volume
+            .slice(0, 10); // Top 10
+
+        // Process Chart Labels
+        const monthLabels = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            monthLabels.push(d.toLocaleString('default', { month: 'short' }));
+        }
+
         res.render('admin/finance/payments/list', {
-            title: 'Payments',
+            title: 'Payments & Transactions',
             payments,
+            dashboard: {
+                metrics: {
+                    sent: totalSent,
+                    received: totalReceived,
+                    net: netBalance,
+                    pending: { amount: pendingAmount, count: pendingCount }
+                },
+                charts: {
+                    cashFlow: {
+                        labels: monthLabels,
+                        sent: cashFlow.map(c => c.sent),
+                        received: cashFlow.map(c => c.received)
+                    }
+                },
+                topPeople
+            },
             layout: 'layouts/adminLayout'
         });
     } catch (err) {

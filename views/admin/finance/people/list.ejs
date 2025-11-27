@@ -1,47 +1,302 @@
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">People Management</h1>
-    <a href="/admin/finance/people/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-        <i class="fas fa-plus mr-2"></i> Add Person
+<!-- Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">People Management</h1>
+        <p class="text-gray-500 text-sm mt-1">Manage your debts, loans, and relationships</p>
+    </div>
+    <a href="/admin/finance/people/add" class="group relative inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-white transition-all duration-200 bg-gradient-to-r from-purple-500 to-indigo-600 font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 hover:shadow-lg hover:from-purple-600 hover:to-indigo-700">
+        <i class="fas fa-plus mr-2 transition-transform group-hover:rotate-90"></i> Add Person
     </a>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="w-full text-left">
-            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-                <tr>
-                    <th class="px-6 py-3">Name</th>
-                    <th class="px-6 py-3">Type</th>
-                    <th class="px-6 py-3">Total Given</th>
-                    <th class="px-6 py-3">Total Received</th>
-                    <th class="px-6 py-3">Net Balance</th>
-                    <th class="px-6 py-3">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                <% people.forEach(p => { %>
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 font-medium text-gray-900"><%= p.name %></td>
-                        <td class="px-6 py-4 text-gray-500"><%= p.type %></td>
-                        <td class="px-6 py-4 text-red-600">Rs <%= p.totalGiven.toLocaleString() %></td>
-                        <td class="px-6 py-4 text-green-600">Rs <%= p.totalReceived.toLocaleString() %></td>
-                        <td class="px-6 py-4 font-bold">
-                            <% if (p.balance > 0) { %>
-                                <span class="text-red-600">You Owe: Rs <%= Math.abs(p.balance).toLocaleString() %></span>
-                            <% } else if (p.balance < 0) { %>
-                                <span class="text-green-600">Owes You: Rs <%= Math.abs(p.balance).toLocaleString() %></span>
-                            <% } else { %>
-                                <span class="text-gray-400">Settled</span>
-                            <% } %>
-                        </td>
-                        <td class="px-6 py-4 text-right text-sm font-medium">
-                            <a href="/admin/finance/people/<%= p._id %>" class="text-blue-600 hover:text-blue-900 mr-3" title="View Profile"><i class="fas fa-eye"></i></a>
-                            <a href="/admin/finance/people/edit/<%= p._id %>" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit"><i class="fas fa-edit"></i></a>
-                            <a href="/admin/finance/people/delete/<%= p._id %>" class="text-red-600 hover:text-red-900 delete-btn" data-name="this person" title="Delete"><i class="fas fa-trash"></i></a>
-                        </td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
+<!-- Summary Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total People -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                    <i class="fas fa-users text-lg"></i>
+                </div>
+            </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total People</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1"><%= dashboard.metrics.count %></h3>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+
+    <!-- Total Lent Out (Owes You) -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                    <i class="fas fa-hand-holding-usd text-lg"></i>
+                </div>
+            </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Lent Out (Owes You)</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.lent.toLocaleString() %></h3>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-green-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+
+    <!-- Total Borrowed (You Owe) -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-red-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-red-50 rounded-lg text-red-600">
+                    <i class="fas fa-hand-holding text-lg"></i>
+                </div>
+            </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Borrowed (You Owe)</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.borrowed.toLocaleString() %></h3>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+
+    <!-- Net Position -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 <%= dashboard.metrics.net >= 0 ? 'bg-emerald-50' : 'bg-red-50' %> rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 <%= dashboard.metrics.net >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600' %> rounded-lg">
+                    <i class="fas fa-balance-scale text-lg"></i>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= dashboard.metrics.net >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' %>">
+                    <%= dashboard.metrics.net >= 0 ? 'Positive' : 'Negative' %>
+                </span>
+            </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Net Position</p>
+            <h3 class="text-2xl font-bold <%= dashboard.metrics.net >= 0 ? 'text-emerald-600' : 'text-red-600' %> mt-1">
+                <%= dashboard.metrics.net >= 0 ? '+' : '' %>Rs <%= dashboard.metrics.net.toLocaleString() %>
+            </h3>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 <%= dashboard.metrics.net >= 0 ? 'bg-emerald-500' : 'bg-red-500' %> transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
 </div>
+
+<!-- Quick Balance Overview (Horizontal Scroll) -->
+<% if (dashboard.topDebtors.length > 0 || dashboard.topCreditors.length > 0) { %>
+<div class="mb-8">
+    <div class="flex justify-between items-center mb-4 px-1">
+        <h3 class="font-bold text-gray-800">Quick Balance Overview</h3>
+    </div>
+    <div class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+        <!-- Who Owes You Most -->
+        <% dashboard.topDebtors.forEach(person => { %>
+            <div class="flex-shrink-0 w-64 bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group border-l-4 border-l-green-500">
+                <div class="flex items-center mb-3">
+                    <% if (person.avatar) { %>
+                        <img src="<%= person.avatar %>" alt="<%= person.name %>" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-100">
+                    <% } else { %>
+                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mr-3 text-green-600 font-bold border-2 border-white shadow-sm">
+                            <%= person.name.charAt(0).toUpperCase() %>
+                        </div>
+                    <% } %>
+                    <div>
+                        <h4 class="font-bold text-gray-900 text-sm truncate w-32"><%= person.name %></h4>
+                        <p class="text-xs text-green-600 font-medium">Owes You</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div class="text-xs text-gray-500">Amount</div>
+                    <div class="font-bold text-green-600 text-lg">
+                        Rs <%= person.absBalance.toLocaleString() %>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+
+        <!-- Who You Owe -->
+        <% dashboard.topCreditors.forEach(person => { %>
+            <div class="flex-shrink-0 w-64 bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group border-l-4 border-l-red-500">
+                <div class="flex items-center mb-3">
+                    <% if (person.avatar) { %>
+                        <img src="<%= person.avatar %>" alt="<%= person.name %>" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-100">
+                    <% } else { %>
+                        <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mr-3 text-red-600 font-bold border-2 border-white shadow-sm">
+                            <%= person.name.charAt(0).toUpperCase() %>
+                        </div>
+                    <% } %>
+                    <div>
+                        <h4 class="font-bold text-gray-900 text-sm truncate w-32"><%= person.name %></h4>
+                        <p class="text-xs text-red-600 font-medium">You Owe</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div class="text-xs text-gray-500">Amount</div>
+                    <div class="font-bold text-red-600 text-lg">
+                        Rs <%= person.balance.toLocaleString() %>
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div>
+<% } %>
+
+<!-- People List Section -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Toolbar -->
+    <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/50">
+        <div class="relative w-full sm:w-64">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="personSearch" placeholder="Search people..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white shadow-sm transition-all">
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <button class="filter-btn active px-4 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap bg-gray-800 text-white" data-filter="all">All</button>
+            <button class="filter-btn px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap" data-filter="owes-me">Owes Me</button>
+            <button class="filter-btn px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap" data-filter="i-owe">I Owe</button>
+            <button class="filter-btn px-4 py-2 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap" data-filter="settled">Settled</button>
+        </div>
+    </div>
+
+    <!-- Modern Card List -->
+    <div class="p-4 grid grid-cols-1 gap-4" id="peopleGrid">
+        <% if (people.length === 0) { %>
+            <div class="text-center py-12">
+                <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-user-plus text-4xl text-purple-500"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">No people added yet</h3>
+                <p class="text-gray-500 text-sm mt-1">Start by adding your first friend or client!</p>
+            </div>
+        <% } else { %>
+            <% people.forEach(person => { 
+                let status = 'settled';
+                if (person.balance < 0) status = 'owes-me';
+                else if (person.balance > 0) status = 'i-owe';
+            %>
+            <div class="person-card bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-all duration-200 group relative overflow-hidden" data-status="<%= status %>" data-name="<%= person.name.toLowerCase() %>">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <!-- Left: Avatar & Info -->
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <div class="relative">
+                            <% if (person.avatar) { %>
+                                <img src="<%= person.avatar %>" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm">
+                            <% } else { %>
+                                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500 font-bold text-xl border-2 border-white shadow-sm">
+                                    <%= person.name.charAt(0).toUpperCase() %>
+                                </div>
+                            <% } %>
+                            <% if (person.type) { %>
+                                <span class="absolute -bottom-1 -right-1 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded-full border-2 border-white shadow-sm uppercase tracking-wide"><%= person.type %></span>
+                            <% } %>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-lg"><%= person.name %></h3>
+                            <div class="flex items-center text-xs text-gray-500 mt-1">
+                                <% if (person.lastTransaction) { %>
+                                    <i class="fas fa-history mr-1.5 text-gray-400"></i>
+                                    <span>Last: <%= new Date(person.lastTransaction.date).toLocaleDateString() %></span>
+                                    <span class="mx-1">•</span>
+                                    <span class="<%= person.lastTransaction.type === 'send' ? 'text-red-500' : 'text-green-500' %>">
+                                        <%= person.lastTransaction.type === 'send' ? 'Sent' : 'Received' %> Rs <%= person.lastTransaction.amount %>
+                                    </span>
+                                <% } else { %>
+                                    <span>No transactions yet</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Balance & Actions -->
+                    <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-4 sm:gap-1">
+                        <div class="text-right">
+                            <% if (person.balance < 0) { %>
+                                <div class="text-sm text-gray-500 font-medium mb-0.5">Owes You</div>
+                                <div class="text-xl font-bold text-green-600">Rs <%= Math.abs(person.balance).toLocaleString() %></div>
+                            <% } else if (person.balance > 0) { %>
+                                <div class="text-sm text-gray-500 font-medium mb-0.5">You Owe</div>
+                                <div class="text-xl font-bold text-red-600">Rs <%= person.balance.toLocaleString() %></div>
+                            <% } else { %>
+                                <div class="text-sm text-gray-500 font-medium mb-0.5">Balance</div>
+                                <div class="text-xl font-bold text-gray-400">Settled</div>
+                            <% } %>
+                        </div>
+                        
+                        <!-- Actions (Visible on Hover/Mobile) -->
+                        <div class="flex items-center gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                            <a href="/admin/finance/people/<%= person._id %>" class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-full transition-colors" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="https://wa.me/<%= person.phone %>" target="_blank" class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors" title="WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="/admin/finance/people/edit/<%= person._id %>" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="Edit">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <a href="/admin/finance/people/delete/<%= person._id %>" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" onclick="return confirm('Are you sure?')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar (Visual Flair) -->
+                <% if (person.balance !== 0) { %>
+                    <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="h-full <%= person.balance < 0 ? 'bg-green-500' : 'bg-red-500' %>" style="width: 100%"></div>
+                    </div>
+                <% } %>
+            </div>
+            <% }) %>
+        <% } %>
+    </div>
+</div>
+
+<!-- Floating Action Button -->
+<div class="fixed bottom-8 right-8 z-50">
+    <a href="/admin/finance/people/add" class="w-14 h-14 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl hover:scale-110 transition-all duration-300" title="Add Person">
+        <i class="fas fa-plus text-xl"></i>
+    </a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('personSearch');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const peopleCards = document.querySelectorAll('.person-card');
+
+        let currentFilter = 'all';
+
+        // Filter Tabs
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Update active state
+                filterBtns.forEach(b => {
+                    b.classList.remove('bg-gray-800', 'text-white');
+                    b.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                btn.classList.add('bg-gray-800', 'text-white');
+
+                currentFilter = btn.getAttribute('data-filter');
+                filterPeople();
+            });
+        });
+
+        // Search
+        searchInput.addEventListener('keyup', filterPeople);
+
+        function filterPeople() {
+            const term = searchInput.value.toLowerCase();
+
+            peopleCards.forEach(card => {
+                const name = card.getAttribute('data-name');
+                const status = card.getAttribute('data-status');
+
+                const matchesSearch = name.includes(term);
+                const matchesFilter = currentFilter === 'all' || status === currentFilter;
+
+                if (matchesSearch && matchesFilter) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>

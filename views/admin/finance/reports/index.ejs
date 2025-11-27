@@ -1,122 +1,387 @@
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Financial Reports</h1>
-    <div class="relative inline-block text-left">
-        <button id="exportDropdownBtn" type="button" class="flex items-center px-4 py-2 bg-gradient-to-r from-teal-600 to-purple-600 text-white rounded-lg hover:from-teal-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg text-sm font-medium group">
-            <i class="fas fa-file-export mr-2 group-hover:animate-bounce"></i> Export Report
-            <i class="fas fa-chevron-down ml-2 text-xs opacity-75"></i>
-        </button>
-        <div id="exportDropdownMenu" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform origin-top-right transition-all duration-200">
-            <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                <button onclick="exportReport('pdf')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center" role="menuitem">
-                    <i class="fas fa-file-pdf mr-3 text-red-500"></i> Download PDF
-                </button>
-                <button onclick="exportReport('excel')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 flex items-center" role="menuitem">
-                    <i class="fas fa-file-excel mr-3 text-green-600"></i> Download Excel
-                </button>
+<!-- Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Financial Reports</h1>
+        <p class="text-gray-500 text-sm mt-1">Deep dive into your financial health</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+        <!-- Date Range Picker (Visual) -->
+        <div class="relative group">
+            <button class="flex items-center space-x-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+                <i class="far fa-calendar-alt text-gray-400"></i>
+                <span>This Month</span>
+                <i class="fas fa-chevron-down text-xs text-gray-400 ml-1"></i>
+            </button>
+            <!-- Dropdown (Hidden for now, visual only) -->
+        </div>
+
+        <!-- Export Button -->
+        <div class="relative group">
+            <button class="flex items-center space-x-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-teal-500/30 hover:shadow-teal-500/40 hover:scale-105 transition-all duration-200">
+                <i class="fas fa-download"></i>
+                <span>Export Report</span>
+                <i class="fas fa-chevron-down text-xs ml-1 opacity-80"></i>
+            </button>
+             <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden hidden group-hover:block z-50 transform origin-top-right transition-all">
+                <a href="/admin/finance/reports/export/pdf" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-teal-600 border-b border-gray-50" target="_blank">
+                    <i class="far fa-file-pdf mr-2 text-red-500"></i> Download PDF
+                </a>
+                <a href="/admin/finance/reports/export/excel" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-teal-600" target="_blank">
+                    <i class="far fa-file-excel mr-2 text-green-600"></i> Download Excel
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-    <!-- Monthly Expenses Chart -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 class="font-bold text-gray-800 mb-4">Monthly Expenses</h3>
-        <div class="h-64">
-            <canvas id="monthlyChart"></canvas>
+<!-- Hero Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Income -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                <i class="fas fa-arrow-down transform rotate-45 text-lg"></i>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= dashboard.metrics.income.trend >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' %>">
+                <%= dashboard.metrics.income.trend >= 0 ? '↑' : '↓' %> <%= Math.abs(dashboard.metrics.income.trend) %>%
+            </span>
+        </div>
+        <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Income</p>
+        <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.income.total.toLocaleString() %></h3>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-emerald-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+
+    <!-- Expenses -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-red-50 rounded-lg text-red-600">
+                <i class="fas fa-arrow-up transform rotate-45 text-lg"></i>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= dashboard.metrics.expense.trend <= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' %>">
+                <%= dashboard.metrics.expense.trend >= 0 ? '↑' : '↓' %> <%= Math.abs(dashboard.metrics.expense.trend) %>%
+            </span>
+        </div>
+        <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Expenses</p>
+        <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.expense.total.toLocaleString() %></h3>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+
+    <!-- Net Savings -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                    <i class="fas fa-piggy-bank text-lg"></i>
+                </div>
+                <% if (dashboard.metrics.savings.rate > 20) { %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Best month!
+                    </span>
+                <% } %>
+            </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Net Savings</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">
+                <%= dashboard.metrics.savings.total >= 0 ? '+' : '' %>Rs <%= dashboard.metrics.savings.total.toLocaleString() %>
+            </h3>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+
+    <!-- Wallet Balance -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="flex justify-between items-start mb-4">
+            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                <i class="fas fa-wallet text-lg"></i>
+            </div>
+        </div>
+        <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Total Balance</p>
+        <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.balance.toLocaleString() %></h3>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Income vs Expense Trend (Spans 2 cols) -->
+    <div class="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-bold text-gray-800">Income vs Expense – 2025</h3>
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-emerald-500 mr-2"></span>Income</div>
+                <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>Expense</div>
+            </div>
+        </div>
+        <div class="relative h-80">
+            <canvas id="incomeExpenseChart"></canvas>
         </div>
     </div>
 
-    <!-- Category Breakdown Chart -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 class="font-bold text-gray-800 mb-4">Expense Categories</h3>
-        <div class="h-64">
-            <canvas id="categoryChart"></canvas>
-        </div>
-    </div>
+    <!-- Monthly Comparison -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 class="text-lg font-bold text-gray-800 mb-6">This Month vs Last</h3>
+        <div class="space-y-6">
+            <!-- Income Comparison -->
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-500">Income</span>
+                    <span class="font-bold text-emerald-600">
+                        <%= dashboard.metrics.income.trend >= 0 ? '+' : '' %><%= dashboard.metrics.income.trend %>%
+                    </span>
+                </div>
+                <div class="flex items-end space-x-2 h-24">
+                    <div class="w-1/2 bg-gray-100 rounded-t-lg relative group" style="height: 60%">
+                        <div class="absolute bottom-0 w-full bg-gray-300 rounded-t-lg transition-all duration-500" style="height: 100%"></div>
+                        <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500">Last</span>
+                    </div>
+                    <div class="w-1/2 bg-emerald-100 rounded-t-lg relative group" style="height: 80%">
+                        <div class="absolute bottom-0 w-full bg-emerald-500 rounded-t-lg transition-all duration-500" style="height: 100%"></div>
+                        <span class="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-emerald-600">This</span>
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-2">
+                    <span>Rs <%= dashboard.charts.monthlyComparison.lastMonth.income.toLocaleString() %></span>
+                    <span>Rs <%= dashboard.charts.monthlyComparison.thisMonth.income.toLocaleString() %></span>
+                </div>
+            </div>
 
-    <!-- Yearly Overview Chart -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 class="font-bold text-gray-800 mb-4">Yearly Overview</h3>
-        <div class="h-64">
-            <canvas id="yearlyChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Wallet-wise Spending Chart -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h3 class="font-bold text-gray-800 mb-4">Wallet-wise Spending</h3>
-        <div class="h-64">
-            <canvas id="walletChart"></canvas>
+            <!-- Expense Comparison -->
+            <div>
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-500">Expense</span>
+                    <span class="font-bold text-red-600">
+                        <%= dashboard.metrics.expense.trend >= 0 ? '+' : '' %><%= dashboard.metrics.expense.trend %>%
+                    </span>
+                </div>
+                <div class="flex items-end space-x-2 h-24">
+                    <div class="w-1/2 bg-gray-100 rounded-t-lg relative group" style="height: 50%">
+                        <div class="absolute bottom-0 w-full bg-gray-300 rounded-t-lg transition-all duration-500" style="height: 100%"></div>
+                    </div>
+                    <div class="w-1/2 bg-red-100 rounded-t-lg relative group" style="height: 70%">
+                        <div class="absolute bottom-0 w-full bg-red-500 rounded-t-lg transition-all duration-500" style="height: 100%"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-2">
+                    <span>Rs <%= dashboard.charts.monthlyComparison.lastMonth.expense.toLocaleString() %></span>
+                    <span>Rs <%= dashboard.charts.monthlyComparison.thisMonth.expense.toLocaleString() %></span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<script src="/js/report-export.js"></script>
+<!-- Breakdown & Analysis -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Category Breakdown (Donut) -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 class="text-lg font-bold text-gray-800 mb-6">Where Your Money Went</h3>
+        <div class="relative h-64">
+            <canvas id="categoryChart"></canvas>
+            <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                <span class="text-3xl font-bold text-gray-800"><%= dashboard.charts.categories.length %></span>
+                <span class="text-xs text-gray-400 uppercase tracking-wider">Categories</span>
+            </div>
+        </div>
+        <div class="mt-6 space-y-3">
+            <% dashboard.charts.categories.slice(0, 3).forEach((cat, index) => { 
+                const colors = ['#f59e0b', '#ef4444', '#3b82f6'];
+            %>
+            <div class="flex justify-between items-center text-sm">
+                <div class="flex items-center">
+                    <span class="w-3 h-3 rounded-full mr-2" style="background-color: <%= colors[index] %>"></span>
+                    <span class="text-gray-600"><%= cat._id %></span>
+                </div>
+                <span class="font-bold text-gray-900">Rs <%= cat.total.toLocaleString() %></span>
+            </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Top 5 Expenses -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h3 class="text-lg font-bold text-gray-800 mb-6">Top 5 Expenses</h3>
+        <div class="space-y-4">
+            <% dashboard.lists.topExpenses.forEach((expense, index) => { %>
+            <div class="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                <div class="flex items-center gap-4">
+                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 group-hover:bg-red-100 group-hover:text-red-600 transition-colors">
+                        #<%= index + 1 %>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900 text-sm"><%= expense.title %></h4>
+                        <p class="text-xs text-gray-500"><%= new Date(expense.date).toLocaleDateString() %></p>
+                    </div>
+                </div>
+                <div class="font-bold text-gray-900">Rs <%= expense.amount.toLocaleString() %></div>
+            </div>
+            <% }) %>
+            <% if (dashboard.lists.topExpenses.length === 0) { %>
+                <p class="text-gray-500 text-sm text-center py-4">No expenses recorded this month.</p>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Wallet & Savings -->
+    <div class="space-y-8">
+        <!-- Wallet Breakdown -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Wallet-wise Spending</h3>
+            <div class="space-y-4">
+                <% dashboard.lists.walletBreakdown.forEach(wallet => { 
+                    const percent = Math.round((wallet.total / dashboard.metrics.expense.total) * 100);
+                %>
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600"><%= wallet._id.name %></span>
+                        <span class="font-bold text-gray-900"><%= percent %>%</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: <%= percent %>%"></div>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </div>
+
+        <!-- Savings Rate Meter -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Savings Rate</p>
+                <h3 class="text-3xl font-bold <%= dashboard.metrics.savings.rate >= 30 ? 'text-emerald-600' : dashboard.metrics.savings.rate >= 10 ? 'text-amber-500' : 'text-red-500' %> mt-1">
+                    <%= dashboard.metrics.savings.rate %>%
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">
+                    <%= dashboard.metrics.savings.rate >= 30 ? 'Great job! You\'re saving well.' : 'Try to save more next month.' %>
+                </p>
+            </div>
+            <div class="relative w-20 h-20">
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle cx="40" cy="40" r="36" stroke="#f3f4f6" stroke-width="8" fill="none"></circle>
+                    <circle cx="40" cy="40" r="36" stroke="<%= dashboard.metrics.savings.rate >= 30 ? '#10b981' : dashboard.metrics.savings.rate >= 10 ? '#f59e0b' : '#ef4444' %>" stroke-width="8" fill="none" stroke-dasharray="226" stroke-dashoffset="<%= 226 - (226 * dashboard.metrics.savings.rate / 100) %>" stroke-linecap="round"></circle>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Insights Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+        <p class="text-xs text-purple-600 font-bold uppercase">Highest Expense Day</p>
+        <h4 class="text-lg font-bold text-purple-900 mt-1"><%= dashboard.insights.highestDay %>th</h4>
+    </div>
+    <div class="bg-blue-50 rounded-xl p-4 border border-blue-100">
+        <p class="text-xs text-blue-600 font-bold uppercase">Avg Daily Spend</p>
+        <h4 class="text-lg font-bold text-blue-900 mt-1">Rs <%= dashboard.insights.avgDaily.toLocaleString() %></h4>
+    </div>
+    <div class="bg-orange-50 rounded-xl p-4 border border-orange-100">
+        <p class="text-xs text-orange-600 font-bold uppercase">Biggest Category</p>
+        <h4 class="text-lg font-bold text-orange-900 mt-1 truncate"><%= dashboard.insights.biggestCategory %></h4>
+    </div>
+    <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+        <p class="text-xs text-indigo-600 font-bold uppercase">Projected Total</p>
+        <h4 class="text-lg font-bold text-indigo-900 mt-1">Rs <%= dashboard.insights.projected.toLocaleString() %></h4>
+    </div>
+</div>
+
+<!-- Chart.js Integration -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Monthly Data
-    const monthlyData = <%- JSON.stringify(monthlyExpenses) %>;
-    new Chart(document.getElementById('monthlyChart').getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: monthlyData.map(m => `Month ${m._id}`),
-            datasets: [{
-                label: 'Expenses',
-                data: monthlyData.map(m => m.total),
-                backgroundColor: '#3b82f6',
-                borderRadius: 4
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-    });
+    // Income vs Expense Chart
+    const ctxIncomeExpense = document.getElementById('incomeExpenseChart').getContext('2d');
+    
+    // Gradients
+    const gradientIncome = ctxIncomeExpense.createLinearGradient(0, 0, 0, 400);
+    gradientIncome.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+    gradientIncome.addColorStop(1, 'rgba(16, 185, 129, 0)');
 
-    // Category Data
-    const categoryData = <%- JSON.stringify(categoryExpenses) %>;
-    new Chart(document.getElementById('categoryChart').getContext('2d'), {
-        type: 'doughnut',
-        data: {
-            labels: categoryData.map(c => c._id),
-            datasets: [{
-                data: categoryData.map(c => c.total),
-                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#64748b'],
-                borderWidth: 0
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-    });
+    const gradientExpense = ctxIncomeExpense.createLinearGradient(0, 0, 0, 400);
+    gradientExpense.addColorStop(0, 'rgba(239, 68, 68, 0.2)');
+    gradientExpense.addColorStop(1, 'rgba(239, 68, 68, 0)');
 
-    // Yearly Data
-    const yearlyData = <%- JSON.stringify(yearlyExpenses || []) %>;
-    new Chart(document.getElementById('yearlyChart').getContext('2d'), {
+    new Chart(ctxIncomeExpense, {
         type: 'line',
         data: {
-            labels: yearlyData.map(y => y._id),
-            datasets: [{
-                label: 'Total Expenses',
-                data: yearlyData.map(y => y.total),
-                borderColor: '#8b5cf6',
-                backgroundColor: '#8b5cf620',
-                tension: 0.4,
-                fill: true
-            }]
+            labels: <%- JSON.stringify(dashboard.charts.trend.labels) %>,
+            datasets: [
+                {
+                    label: 'Income',
+                    data: <%- JSON.stringify(dashboard.charts.trend.income) %>,
+                    borderColor: '#10b981',
+                    backgroundColor: gradientIncome,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Expense',
+                    data: <%- JSON.stringify(dashboard.charts.trend.expense) %>,
+                    borderColor: '#ef4444',
+                    backgroundColor: gradientExpense,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                }
+            ]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#1f2937',
+                    bodyColor: '#4b5563',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': Rs ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f3f4f6', borderDash: [5, 5] },
+                    ticks: { callback: value => 'Rs ' + value/1000 + 'k' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
     });
 
-    // Wallet Data
-    const walletData = <%- JSON.stringify(walletExpenses || []) %>;
-    new Chart(document.getElementById('walletChart').getContext('2d'), {
-        type: 'bar',
+    // Category Chart
+    const ctxCategory = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctxCategory, {
+        type: 'doughnut',
         data: {
-            labels: walletData.map(w => w.name),
+            labels: <%- JSON.stringify(dashboard.charts.categories.map(c => c._id)) %>,
             datasets: [{
-                label: 'Spending',
-                data: walletData.map(w => w.total),
-                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
-                borderRadius: 4
+                data: <%- JSON.stringify(dashboard.charts.categories.map(c => c.total)) %>,
+                backgroundColor: ['#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#10b981', '#6366f1'],
+                borderWidth: 0,
+                hoverOffset: 4
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: { display: false }
+            }
+        }
     });
 </script>
