@@ -1,165 +1,401 @@
-<div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Expenses</h1>
-    <a href="/admin/finance/expenses/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-        <i class="fas fa-plus mr-2"></i> Add Expense
+<!-- Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Expenses</h1>
+        <p class="text-gray-500 text-sm mt-1">Manage and track your spending</p>
+    </div>
+    <a href="/admin/finance/expenses/add" class="group relative inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-white transition-all duration-200 bg-gradient-to-r from-teal-500 to-emerald-600 font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 hover:shadow-lg hover:from-teal-600 hover:to-emerald-700">
+        <i class="fas fa-plus mr-2 transition-transform group-hover:rotate-90"></i> Add Expense
     </a>
 </div>
 
-<!-- Dashboard Summary -->
+<!-- Summary Cards Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <!-- Row 1: Circular Progress Cards -->
-    
-    <!-- Today's Expense -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
-        <p class="text-gray-500 text-sm font-medium mb-4">Today's Expense</p>
-        <div class="relative w-32 h-32">
-            <svg class="w-full h-full transform -rotate-90">
-                <circle cx="64" cy="64" r="56" stroke="#f3f4f6" stroke-width="8" fill="none"></circle>
-                <circle cx="64" cy="64" r="56" stroke="#3b82f6" stroke-width="8" fill="none" stroke-dasharray="351.86" stroke-dashoffset="0"></circle>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-xl font-bold text-blue-500"><%= dashboard.today %></span>
+    <!-- Today -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                    <i class="fas fa-calendar-day text-lg"></i>
+                </div>
+                <% if (dashboard.metrics.today.trend !== 0) { %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= dashboard.metrics.today.trend > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' %>">
+                        <i class="fas fa-arrow-<%= dashboard.metrics.today.trend > 0 ? 'up' : 'down' %> mr-1"></i>
+                        <%= Math.abs(dashboard.metrics.today.trend) %>%
+                    </span>
+                <% } %>
             </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Today</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.today.amount.toLocaleString() %></h3>
         </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
 
-    <!-- Yesterday's Expense -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
-        <p class="text-gray-500 text-sm font-medium mb-4">Yesterday's Expense</p>
-        <div class="relative w-32 h-32">
-            <svg class="w-full h-full transform -rotate-90">
-                <circle cx="64" cy="64" r="56" stroke="#f3f4f6" stroke-width="8" fill="none"></circle>
-                <circle cx="64" cy="64" r="56" stroke="#f97316" stroke-width="8" fill="none" stroke-dasharray="351.86" stroke-dashoffset="<%= 351.86 * 0.25 %>"></circle> <!-- Static offset for visual as per image/mockup logic, ideally dynamic but 100% is fine too -->
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-xl font-bold text-orange-500"><%= dashboard.yesterday %></span>
+    <!-- This Month -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-teal-50 rounded-lg text-teal-600">
+                    <i class="fas fa-calendar-alt text-lg"></i>
+                </div>
+                <% if (dashboard.metrics.month.trend !== 0) { %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= dashboard.metrics.month.trend > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' %>">
+                        <i class="fas fa-arrow-<%= dashboard.metrics.month.trend > 0 ? 'up' : 'down' %> mr-1"></i>
+                        <%= Math.abs(dashboard.metrics.month.trend) %>%
+                    </span>
+                <% } %>
             </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">This Month</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.month.amount.toLocaleString() %></h3>
         </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-teal-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
 
-    <!-- Last 7 Days Expense -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
-        <p class="text-gray-500 text-sm font-medium mb-4">Last 7day's Expense</p>
-        <div class="relative w-32 h-32">
-            <svg class="w-full h-full transform -rotate-90">
-                <circle cx="64" cy="64" r="56" stroke="#f3f4f6" stroke-width="8" fill="none"></circle>
-                <circle cx="64" cy="64" r="56" stroke="#14b8a6" stroke-width="8" fill="none" stroke-dasharray="351.86" stroke-dashoffset="0"></circle>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-xl font-bold text-teal-500"><%= dashboard.last7Days %></span>
+    <!-- This Year -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                    <i class="fas fa-chart-line text-lg"></i>
+                </div>
+                <% if (dashboard.metrics.year.trend !== 0) { %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= dashboard.metrics.year.trend > 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' %>">
+                        <i class="fas fa-arrow-<%= dashboard.metrics.year.trend > 0 ? 'up' : 'down' %> mr-1"></i>
+                        <%= Math.abs(dashboard.metrics.year.trend) %>%
+                    </span>
+                <% } %>
             </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">This Year</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.year.amount.toLocaleString() %></h3>
         </div>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
 
-    <!-- Last 30 Days Expense -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center">
-        <p class="text-gray-500 text-sm font-medium mb-4">Last 30day's Expenses</p>
-        <div class="relative w-32 h-32">
-            <svg class="w-full h-full transform -rotate-90">
-                <circle cx="64" cy="64" r="56" stroke="#f3f4f6" stroke-width="8" fill="none"></circle>
-                <circle cx="64" cy="64" r="56" stroke="#ef4444" stroke-width="8" fill="none" stroke-dasharray="351.86" stroke-dashoffset="0"></circle>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-xl font-bold text-red-500"><%= dashboard.last30Days %></span>
+    <!-- All Time -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div class="absolute top-0 right-0 w-24 h-24 bg-gray-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+        <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+                <div class="p-2 bg-gray-100 rounded-lg text-gray-600">
+                    <i class="fas fa-university text-lg"></i>
+                </div>
             </div>
+            <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">All Time</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">Rs <%= dashboard.metrics.total.amount.toLocaleString() %></h3>
         </div>
-    </div>
-
-    <!-- Row 2: Text Summaries -->
-    
-    <!-- Current Year Expenses -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-40">
-        <p class="text-gray-500 text-sm font-medium mb-2">Current Year Expenses</p>
-        <span class="text-2xl font-bold text-red-500"><%= dashboard.currentYear %></span>
-    </div>
-
-    <!-- Total Expenses -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center h-40">
-        <p class="text-gray-500 text-sm font-medium mb-2">Total Expenses</p>
-        <span class="text-2xl font-bold text-red-500"><%= dashboard.total %></span>
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
     </div>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Trend Chart -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
+        <h3 class="font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-chart-area text-blue-500 mr-2"></i> Expense Trend – Last 12 Months
+        </h3>
+        <div class="h-72">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Category Chart -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-bold text-gray-800 mb-6 flex items-center">
+            <i class="fas fa-chart-pie text-teal-500 mr-2"></i> Top Categories This Month
+        </h3>
+        <div class="h-60 relative">
+            <canvas id="categoryChart"></canvas>
+            <% if (dashboard.charts.categories.data.length === 0) { %>
+                <div class="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                    No data this month
+                </div>
+            <% } %>
+        </div>
+        <div class="mt-4 space-y-2 max-h-24 overflow-y-auto custom-scrollbar">
+            <% dashboard.charts.categories.labels.forEach((label, index) => { %>
+                <div class="flex justify-between items-center text-xs">
+                    <span class="flex items-center text-gray-600">
+                        <span class="w-2 h-2 rounded-full mr-2" style="background-color: <%= ['#3b82f6', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5] %>"></span>
+                        <%= label %>
+                    </span>
+                    <span class="font-medium text-gray-900">Rs <%= dashboard.charts.categories.data[index].toLocaleString() %></span>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Insights -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-4 border border-indigo-100 flex items-center shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mr-4 flex-shrink-0">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div>
+            <p class="text-xs text-indigo-500 font-semibold uppercase tracking-wide">Highest Expense</p>
+            <p class="font-bold text-gray-900">Rs <%= dashboard.stats.highest.amount.toLocaleString() %></p>
+            <p class="text-xs text-gray-500 truncate w-32"><%= dashboard.stats.highest.title || '-' %></p>
+        </div>
+    </div>
+
+    <div class="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-4 border border-emerald-100 flex items-center shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-4 flex-shrink-0">
+            <i class="fas fa-calendar-day"></i>
+        </div>
+        <div>
+            <p class="text-xs text-emerald-500 font-semibold uppercase tracking-wide">Avg Daily Spend</p>
+            <p class="font-bold text-gray-900">Rs <%= dashboard.stats.avgDaily.toLocaleString() %></p>
+            <p class="text-xs text-gray-500">This Month</p>
+        </div>
+    </div>
+
+    <div class="bg-gradient-to-br from-orange-50 to-white rounded-xl p-4 border border-orange-100 flex items-center shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 mr-4 flex-shrink-0">
+            <i class="fas fa-tag"></i>
+        </div>
+        <div>
+            <p class="text-xs text-orange-500 font-semibold uppercase tracking-wide">Top Category</p>
+            <p class="font-bold text-gray-900">Rs <%= dashboard.stats.topCategory.amount.toLocaleString() %></p>
+            <p class="text-xs text-gray-500"><%= dashboard.stats.topCategory.name %></p>
+        </div>
+    </div>
+</div>
+
+<!-- Expenses Table Section -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Toolbar -->
+    <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/50">
+        <div class="relative w-full sm:w-64">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="expenseSearch" placeholder="Search expenses..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm bg-white shadow-sm transition-all">
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+            <select id="filterTime" class="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow-sm cursor-pointer hover:border-teal-300 transition-colors">
+                <option value="all">All Time</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+            </select>
+            <select id="filterStatus" class="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white shadow-sm cursor-pointer hover:border-teal-300 transition-colors">
+                <option value="all">All Status</option>
+                <option value="unpaid">Unpaid/Partial</option>
+                <option value="paid">Fully Paid</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Table -->
     <div class="overflow-x-auto">
-        <table class="w-full text-left">
-                <thead class="bg-gray-50">
+        <table class="w-full text-left border-separate border-spacing-y-1 px-2">
+            <thead class="bg-gray-50/50">
+                <tr>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Title</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y-0 divide-gray-200" id="expenseTableBody">
+                <% if (expenses.length === 0) { %>
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid / Due</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-20 h-20 bg-teal-50 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-piggy-bank text-4xl text-teal-500"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-900">No expenses yet</h3>
+                                <p class="text-gray-500 text-sm mt-1">You're saving well! Start tracking when you spend.</p>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <% } else { %>
                     <% expenses.forEach(expense => { %>
-                        <tr class="hover:bg-gray-50 group">
-                            <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                <%= new Date(expense.date).toLocaleDateString() %>
+                        <tr class="group hover:bg-gray-50 transition-all duration-200 hover:shadow-sm rounded-lg bg-white">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 first:rounded-l-lg">
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-gray-700"><%= new Date(expense.date).getDate() %></span>
+                                    <span class="text-xs"><%= new Date(expense.date).toLocaleString('default', { month: 'short' }) %></span>
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
-                                    <span class="w-2 h-2 rounded-full mr-2 
-                                        <%= expense.status === 'Paid' ? 'bg-green-500' : 
-                                           expense.status === 'Partial' ? 'bg-orange-500' : 
-                                           expense.status === 'Overdue' ? 'bg-red-500' : 'bg-gray-400' %>"></span>
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 text-gray-500 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                        <i class="fas fa-receipt text-xs"></i>
+                                    </div>
                                     <span class="font-medium text-gray-900"><%= expense.title %></span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
-                                <span class="px-2 py-1 bg-gray-100 rounded text-xs"><%= expense.category %></span>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                    <%= expense.category %>
+                                </span>
                             </td>
-                            <td class="px-6 py-4 text-sm font-bold text-gray-900">
-                                Rs <%= expense.amount.toLocaleString() %>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-bold text-gray-900">Rs <%= expense.amount.toLocaleString() %></span>
                             </td>
-                            <td class="px-6 py-4 text-sm">
+                            <td class="px-6 py-4">
                                 <% if(expense.status === 'Paid') { %>
-                                    <span class="text-green-600 font-medium">Fully Paid</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span> Fully Paid
+                                    </span>
                                 <% } else { 
                                     const percent = Math.min(100, Math.round(((expense.paidAmount || 0) / expense.amount) * 100));
                                 %>
-                                    <div class="flex flex-col gap-1 min-w-[140px]">
-                                        <div class="flex justify-between text-xs">
-                                            <span class="text-green-600">Paid: <%= (expense.paidAmount || 0).toLocaleString() %></span>
-                                            <span class="text-red-500">Due: <%= expense.amountDue.toLocaleString() %></span>
+                                    <div class="w-32">
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span class="<%= percent > 0 ? 'text-orange-600' : 'text-red-600' %> font-medium">
+                                                <%= percent > 0 ? 'Partial' : 'Unpaid' %>
+                                            </span>
+                                            <span class="text-gray-400"><%= percent %>%</span>
                                         </div>
                                         <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                                            <div class="bg-green-500 h-1.5 rounded-full" style="width: <%= percent %>%"></div>
+                                            <div class="<%= percent > 0 ? 'bg-orange-500' : 'bg-red-500' %> h-1.5 rounded-full transition-all duration-500" style="width: <%= percent %>%"></div>
+                                        </div>
+                                        <div class="text-[10px] text-gray-400 mt-1">
+                                            Due: Rs <%= expense.amountDue.toLocaleString() %>
                                         </div>
                                     </div>
                                 <% } %>
                             </td>
-                            <td class="px-6 py-4 text-sm">
-                                <% if(expense.endDate && expense.status !== 'Paid') { 
-                                    const daysLeft = Math.ceil((new Date(expense.endDate) - new Date()) / (1000 * 60 * 60 * 24));
-                                %>
-                                    <span class="<%= daysLeft < 0 ? 'text-red-600 font-bold' : 'text-gray-500' %>">
-                                        <%= new Date(expense.endDate).toLocaleDateString() %>
-                                        <% if(daysLeft < 0) { %> <i class="fas fa-exclamation-circle ml-1"></i> <% } %>
-                                    </span>
-                                <% } else { %>
-                                    <span class="text-gray-400">-</span>
-                                <% } %>
-                            </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium">
-                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <a href="/admin/finance/expenses/<%= expense._id %>" class="text-blue-600 hover:text-blue-900 bg-blue-50 p-2 rounded-lg hover:bg-blue-100 transition-colors" title="View Details">
+                            <td class="px-6 py-4 text-right text-sm font-medium last:rounded-r-lg">
+                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
+                                    <a href="/admin/finance/expenses/<%= expense._id %>" class="text-gray-400 hover:text-blue-600 transition-colors p-1" title="View">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="/admin/finance/expenses/edit/<%= expense._id %>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors" title="Edit">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="/admin/finance/expenses/edit/<%= expense._id %>" class="text-gray-400 hover:text-indigo-600 transition-colors p-1" title="Edit">
+                                        <i class="fas fa-pen"></i>
                                     </a>
-                                    <a href="/admin/finance/expenses/delete/<%= expense._id %>" class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-lg hover:bg-red-100 transition-colors" onclick="return confirm('Are you sure?')" title="Delete">
+                                    <a href="/admin/finance/expenses/delete/<%= expense._id %>" class="text-gray-400 hover:text-red-600 transition-colors p-1" onclick="return confirm('Are you sure?')" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                     <% }) %>
-                </tbody>
+                <% } %>
+            </tbody>
         </table>
     </div>
 </div>
+
+<!-- Floating Action Button -->
+<a href="/admin/finance/expenses/add" class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl hover:scale-110 transition-all duration-300 z-50 group">
+    <i class="fas fa-plus text-xl group-hover:rotate-90 transition-transform duration-300"></i>
+</a>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Data from Server
+        const trendData = <%- JSON.stringify(dashboard.charts.trend) %>;
+        const categoryData = <%- JSON.stringify(dashboard.charts.categories) %>;
+
+        // 1. Trend Chart (Area)
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        
+        // Gradient
+        const gradient = ctxTrend.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)'); // Blue
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: trendData.labels,
+                datasets: [{
+                    label: 'Expenses',
+                    data: trendData.data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: gradient,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#3b82f6',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 14, weight: 'bold' },
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Rs ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [4, 4], color: '#f1f5f9' },
+                        ticks: { font: { size: 11 }, color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, color: '#94a3b8' }
+                    }
+                }
+            }
+        });
+
+        // 2. Category Chart (Donut)
+        const ctxCat = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctxCat, {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.labels,
+                datasets: [{
+                    data: categoryData.data,
+                    backgroundColor: ['#3b82f6', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        callbacks: {
+                            label: function(context) {
+                                return ' Rs ' + context.parsed.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                cutout: '75%'
+            }
+        });
+
+        // Simple Search Filter
+        const searchInput = document.getElementById('expenseSearch');
+        const tableRows = document.querySelectorAll('#expenseTableBody tr');
+
+        searchInput.addEventListener('keyup', function(e) {
+            const term = e.target.value.toLowerCase();
+            tableRows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+    });
+</script>

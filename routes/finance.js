@@ -558,21 +558,36 @@ router.get('/expenses', async (req, res) => {
 
         const expenses = await Expense.find().populate('wallet').populate('categoryId').sort({ date: -1 });
 
-        // --- Calculate Dashboard Metrics ---
+        // --- Calculate Advanced Dashboard Metrics ---
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
         const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const last7DaysStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-        const last30DaysStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
-        const yearStart = new Date(now.getFullYear(), 0, 1);
 
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0); // End of last month
+
+        const thisYearStart = new Date(now.getFullYear(), 0, 1);
+        const lastYearStart = new Date(now.getFullYear() - 1, 0, 1);
+        const lastYearEnd = new Date(now.getFullYear() - 1, 11, 31);
+
+        // Metrics Containers
         let todayExpense = 0;
         let yesterdayExpense = 0;
-        let last7DaysExpense = 0;
-        let last30DaysExpense = 0;
-        let currentYearExpense = 0;
+
+        let thisMonthExpense = 0;
+        let lastMonthExpense = 0;
+
+        let thisYearExpense = 0;
+        let lastYearExpense = 0;
+
         let totalExpense = 0;
+
+        // For Charts & Stats
+        let highestExpense = { amount: 0, title: '' };
+        let categoryMapThisMonth = {};
+        let monthlyTrend = Array(12).fill(0); // Last 12 months
 
         expenses.forEach(e => {
             const eDate = new Date(e.date);
@@ -580,12 +595,70 @@ router.get('/expenses', async (req, res) => {
 
             totalExpense += amount;
 
+            // 1. Comparative Metrics
             if (eDate >= todayStart) todayExpense += amount;
-            if (eDate >= yesterdayStart && eDate < yesterdayEnd) yesterdayExpense += amount;
-            if (eDate >= last7DaysStart) last7DaysExpense += amount;
-            if (eDate >= last30DaysStart) last30DaysExpense += amount;
-            if (eDate >= yearStart) currentYearExpense += amount;
+            else if (eDate >= yesterdayStart && eDate < yesterdayEnd) yesterdayExpense += amount;
+
+            if (eDate >= thisMonthStart) thisMonthExpense += amount;
+            else if (eDate >= lastMonthStart && eDate <= lastMonthEnd) lastMonthExpense += amount;
+
+            if (eDate >= thisYearStart) thisYearExpense += amount;
+            else if (eDate >= lastYearStart && eDate <= lastYearEnd) lastYearExpense += amount;
+
+            // 2. Quick Stats: Highest Expense
+            if (amount > highestExpense.amount) {
+                highestExpense = { amount, title: e.title };
+            }
+
+            // 3. Category Breakdown (This Month)
+            if (eDate >= thisMonthStart) {
+                const catName = e.category ? e.category : (e.categoryId ? e.categoryId.name : 'Uncategorized');
+                categoryMapThisMonth[catName] = (categoryMapThisMonth[catName] || 0) + amount;
+            }
+
+            // 4. Monthly Trend (Last 12 Months)
+            // Calculate index relative to current month (0 = this month, 11 = 11 months ago)
+            // Actually, let's do 0 = 11 months ago, 11 = this month for the chart
+            const monthsAgo = (now.getFullYear() - eDate.getFullYear()) * 12 + (now.getMonth() - eDate.getMonth());
+            if (monthsAgo >= 0 && monthsAgo < 12) {
+                monthlyTrend[11 - monthsAgo] += amount;
+            }
         });
+
+        // Calculate Trends (%)
+        const calcTrend = (current, previous) => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return Math.round(((current - previous) / previous) * 100);
+        };
+
+        const trends = {
+            today: calcTrend(todayExpense, yesterdayExpense),
+            month: calcTrend(thisMonthExpense, lastMonthExpense),
+            year: calcTrend(thisYearExpense, lastYearExpense)
+        };
+
+        // Quick Stats: Avg Daily Spend (This Month)
+        const daysPassed = now.getDate();
+        const avgDailySpend = daysPassed > 0 ? Math.round(thisMonthExpense / daysPassed) : 0;
+
+        // Quick Stats: Top Category
+        let topCategory = { name: 'None', amount: 0 };
+        Object.entries(categoryMapThisMonth).forEach(([name, amount]) => {
+            if (amount > topCategory.amount) {
+                topCategory = { name, amount };
+            }
+        });
+
+        // Format Chart Data
+        const categoryLabels = Object.keys(categoryMapThisMonth);
+        const categoryData = Object.values(categoryMapThisMonth);
+
+        // Generate Month Labels for Trend Chart
+        const monthLabels = [];
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            monthLabels.push(d.toLocaleString('default', { month: 'short' }));
+        }
 
         // Set Cache (1 hour) - We might want to cache the metrics too if we were optimizing heavily
         if (redisClient.isReady) {
@@ -600,12 +673,21 @@ router.get('/expenses', async (req, res) => {
             title: 'Expenses',
             expenses,
             dashboard: {
-                today: todayExpense,
-                yesterday: yesterdayExpense,
-                last7Days: last7DaysExpense,
-                last30Days: last30DaysExpense,
-                currentYear: currentYearExpense,
-                total: totalExpense
+                metrics: {
+                    today: { amount: todayExpense, trend: trends.today },
+                    month: { amount: thisMonthExpense, trend: trends.month },
+                    year: { amount: thisYearExpense, trend: trends.year },
+                    total: { amount: totalExpense }
+                },
+                charts: {
+                    trend: { labels: monthLabels, data: monthlyTrend },
+                    categories: { labels: categoryLabels, data: categoryData }
+                },
+                stats: {
+                    highest: highestExpense,
+                    avgDaily: avgDailySpend,
+                    topCategory: topCategory
+                }
             },
             layout: 'layouts/adminLayout'
         });
