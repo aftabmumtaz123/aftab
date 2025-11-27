@@ -547,19 +547,10 @@ router.get('/expenses', async (req, res) => {
         // Check Cache
         if (redisClient.isReady) {
             const cachedExpenses = await redisClient.get('finance:expenses');
-            if (cachedExpenses) {
-                console.log('Cache Hit: Expenses');
-                return res.render('admin/finance/expenses/list', {
-                    title: 'Expenses',
-                    expenses: JSON.parse(cachedExpenses),
-                    layout: 'layouts/adminLayout'
-                });
-            }
+            // We are skipping cache for now to ensure dashboard is always fresh or we need to cache the dashboard data too.
+            // For this task, let's invalidate or just fetch fresh for the dashboard metrics.
+            // Actually, let's just fetch fresh for now to be safe and simple.
         }
-
-
-
-        console.log('Cache Miss: Expenses');
 
         if (require('mongoose').connection.readyState !== 1) {
             return res.render('offline', { layout: false });
@@ -567,7 +558,36 @@ router.get('/expenses', async (req, res) => {
 
         const expenses = await Expense.find().populate('wallet').populate('categoryId').sort({ date: -1 });
 
-        // Set Cache (1 hour)
+        // --- Calculate Dashboard Metrics ---
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const last7DaysStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+        const last30DaysStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+        const yearStart = new Date(now.getFullYear(), 0, 1);
+
+        let todayExpense = 0;
+        let yesterdayExpense = 0;
+        let last7DaysExpense = 0;
+        let last30DaysExpense = 0;
+        let currentYearExpense = 0;
+        let totalExpense = 0;
+
+        expenses.forEach(e => {
+            const eDate = new Date(e.date);
+            const amount = e.amount;
+
+            totalExpense += amount;
+
+            if (eDate >= todayStart) todayExpense += amount;
+            if (eDate >= yesterdayStart && eDate < yesterdayEnd) yesterdayExpense += amount;
+            if (eDate >= last7DaysStart) last7DaysExpense += amount;
+            if (eDate >= last30DaysStart) last30DaysExpense += amount;
+            if (eDate >= yearStart) currentYearExpense += amount;
+        });
+
+        // Set Cache (1 hour) - We might want to cache the metrics too if we were optimizing heavily
         if (redisClient.isReady) {
             try {
                 await redisClient.set('finance:expenses', JSON.stringify(expenses), { EX: 3600 });
@@ -579,6 +599,14 @@ router.get('/expenses', async (req, res) => {
         res.render('admin/finance/expenses/list', {
             title: 'Expenses',
             expenses,
+            dashboard: {
+                today: todayExpense,
+                yesterday: yesterdayExpense,
+                last7Days: last7DaysExpense,
+                last30Days: last30DaysExpense,
+                currentYear: currentYearExpense,
+                total: totalExpense
+            },
             layout: 'layouts/adminLayout'
         });
     } catch (err) {
