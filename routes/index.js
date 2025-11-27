@@ -138,40 +138,35 @@ router.get('/contact', async (req, res) => {
 // Handle Contact Form Submit
 router.post('/contact', async (req, res) => {
     const { name, email, subject, message } = req.body;
-    const nodemailer = require('nodemailer');
     const Contact = require('../models/Contact'); // Import Contact model
+    const notificationService = require('../utils/notificationService');
 
     try {
         // Save to Database
         await Contact.create({ name, email, subject, message });
 
-        // Create transporter
-        const transporter = nodemailer.createTransport({
-            service: 'gmail', // or your preferred service
-            auth: {
-                user: process.env.EMAIL_USER, // Add these to .env
-                pass: process.env.EMAIL_PASS
-            }
+        // 1. Send Email to Admin (You)
+        const adminSubject = `Portfolio Contact: ${subject}`;
+        const adminHtml = `
+            <h3>New Message from ${name}</h3>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <blockquote style="border-left: 4px solid #eee; padding-left: 10px; color: #555;">
+                ${message.replace(/\n/g, '<br>')}
+            </blockquote>
+        `;
+        await notificationService.sendEmail(process.env.EMAIL_USER, adminSubject, adminHtml);
+
+        // 2. Send Push Notification + In-App Notification to Admin
+        await notificationService.createNotification({
+            title: `New Message from ${name}`,
+            message: subject || 'No subject',
+            type: 'info',
+            link: '/admin/contacts'
         });
 
-        // Email options
-        const mailOptions = {
-            from: email,
-            to: process.env.EMAIL_USER, // Send to yourself
-            subject: `Portfolio Contact: ${subject}`,
-            text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
-        };
-
-        // Send email (optional, wrap in try-catch if you don't want it to fail the request)
-        try {
-            await transporter.sendMail(mailOptions);
-        } catch (emailErr) {
-            console.error('Email sending failed:', emailErr);
-            // Continue even if email fails, as we saved to DB
-        }
-
-        // Redirect with success message (you might want to add flash messages later)
-        // For now, just redirect back to contact
+        // Redirect with success message
         res.redirect('/contact?success=true');
     } catch (err) {
         console.error('Contact Error:', err);

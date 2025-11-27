@@ -12,8 +12,43 @@ const upload = require('../middleware/uploadMiddleware');
 const { requireAuth } = require('../middleware/authMiddleware');
 const adminHelpers = require('../utils/adminHelpers');
 const Contact = require('../models/Contact'); // Import Contact model
+const Notification = require('../models/Notification');
+const notificationService = require('../utils/notificationService');
 
 router.use(requireAuth);
+
+// --- Notifications ---
+router.get('/notifications', async (req, res) => {
+    try {
+        const notifications = await Notification.find().sort({ date: -1 }).limit(20);
+        res.json(notifications);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch notifications' });
+    }
+});
+
+router.post('/notifications/mark-read', async (req, res) => {
+    try {
+        await Notification.updateMany({ read: false }, { read: true });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to mark notifications as read' });
+    }
+});
+
+router.post('/notifications/subscribe', async (req, res) => {
+    try {
+        const subscription = req.body;
+        const redisClient = require('../config/redis');
+        if (redisClient && redisClient.isReady) {
+            await redisClient.sAdd('push_subscriptions', JSON.stringify(subscription));
+        }
+        res.status(201).json({ success: true });
+    } catch (err) {
+        console.error('Subscription error:', err);
+        res.status(500).json({ error: 'Failed to subscribe' });
+    }
+});
 
 // Middleware to check DB connection for all admin routes
 router.use((req, res, next) => {
