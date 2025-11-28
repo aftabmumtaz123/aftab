@@ -1,75 +1,358 @@
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Wallets & Accounts</h2>
-    <div class="flex gap-3">
-        <a href="/admin/finance/wallets/transfer" class="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center shadow-sm">
-            <i class="fas fa-exchange-alt mr-2"></i> Transfer
-        </a>
-        <a href="/admin/finance/wallets/add" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-md">
+<!-- Confetti CDN -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<div class="p-6 max-w-7xl mx-auto space-y-8">
+
+    <!-- 1. Header & Total Balance -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Wallets & Accounts</h1>
+            <p class="text-gray-500 mt-1">Manage your funds and transfers</p>
+        </div>
+        
+        <!-- Total Balance Card (Desktop: Right aligned, Mobile: Full width) -->
+        <div class="bg-gray-900 text-white px-6 py-3 rounded-2xl shadow-lg flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
+            <div>
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-medium">Total Balance</p>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-2xl font-bold tracking-tight" id="totalBalanceDisplay">PKR <%= dashboard.totalBalance.toLocaleString() %></h2>
+                    <button onclick="toggleBalance()" class="text-gray-400 hover:text-white transition-colors focus:outline-none">
+                        <i class="fas fa-eye" id="balanceToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="h-10 w-10 bg-gray-800 rounded-full flex items-center justify-center">
+                <i class="fas fa-wallet text-blue-400"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Actions Bar -->
+    <div class="flex justify-end gap-3">
+        <button onclick="openTransferModal()" class="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full hover:bg-gray-50 transition-all shadow-sm hover:shadow-md flex items-center font-medium">
+            <i class="fas fa-exchange-alt mr-2 text-gray-400"></i> Transfer
+        </button>
+        <a href="/admin/finance/wallets/add" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center font-medium">
             <i class="fas fa-plus mr-2"></i> Add Wallet
         </a>
     </div>
-</div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-    <% wallets.forEach(w => { %>
-        <!-- Wallet Card -->
-        <div class="w-full aspect-[1.586/1] rounded-3xl p-6 text-white relative overflow-hidden shadow-xl transform hover:-translate-y-1 transition-all duration-300 group" 
-             style="background: linear-gradient(135deg, <%= w.color || '#3b82f6' %> 0%, <%= w.color ? w.color + 'dd' : '#1d4ed8' %> 100%);">
-            
-            <!-- Edit/Delete Actions (Hidden by default, shown on hover) -->
-            <div class="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2">
-                <a href="/admin/finance/wallets/edit/<%= w._id %>" class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white hover:text-blue-600 transition-colors">
-                    <i class="fas fa-edit text-xs"></i>
-                </a>
-                <a href="/admin/finance/wallets/delete/<%= w._id %>" class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white hover:text-red-600 transition-colors" onclick="return confirm('Delete this wallet?')">
-                    <i class="fas fa-trash text-xs"></i>
-                </a>
+    <!-- 3. Horizontal Scrollable Carousel -->
+    <% if (wallets.length === 0) { %>
+        <!-- Empty State -->
+        <div class="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-gray-200">
+            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-wallet text-4xl text-blue-300"></i>
             </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">No Wallets Yet</h3>
+            <p class="text-gray-500 mb-6 max-w-md mx-auto">Add your first wallet (Cash, Bank, or Mobile Account) to start tracking your finances.</p>
+            <a href="/admin/finance/wallets/add" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700">
+                Create First Wallet
+            </a>
+        </div>
+    <% } else { %>
+        <div class="relative group">
+            <!-- Scroll Hints -->
+            <div class="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none md:hidden"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none md:hidden"></div>
 
-            <!-- Background Pattern -->
-            <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-            <div class="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
-            
-            <div class="relative z-10 flex flex-col h-full justify-between">
-                <div class="flex justify-between items-start">
-                    <div class="flex flex-col">
-                        <span class="text-white/80 text-xs font-medium tracking-wider uppercase"><%= w.type %></span>
-                        <h4 class="font-bold text-xl tracking-wide"><%= w.name %></h4>
-                    </div>
-                    <i class="fas fa-wifi text-white/50 rotate-90 text-xl"></i>
-                </div>
+            <div class="flex overflow-x-auto gap-6 pb-8 px-1 snap-x snap-mandatory no-scrollbar" id="walletCarousel">
+                <% wallets.forEach(w => { %>
+                    <!-- Wallet Card -->
+                    <div class="flex-shrink-0 w-full md:w-[380px] snap-center">
+                        <div class="w-full aspect-[1.586/1] rounded-3xl p-6 text-white relative overflow-hidden shadow-xl transform hover:-translate-y-1 transition-all duration-300 group cursor-pointer wallet-card"
+                             onclick="window.location.href='/admin/finance/wallets/<%= w._id %>'"
+                             style="background: linear-gradient(135deg, <%= w.color || '#3b82f6' %> 0%, <%= w.color ? w.color + 'dd' : '#1d4ed8' %> 100%);">
+                            
+                            <!-- Low Balance Alert -->
+                            <% if (w.balance < 1000) { %>
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-b-lg shadow-md z-20">
+                                    LOW BALANCE
+                                </div>
+                            <% } %>
 
-                <div class="flex items-center gap-3 my-2">
-                    <div class="w-12 h-9 bg-yellow-200/80 rounded-md flex items-center justify-center overflow-hidden relative shadow-sm">
-                        <div class="absolute w-full h-[1px] bg-black/20 top-1/3"></div>
-                        <div class="absolute w-full h-[1px] bg-black/20 bottom-1/3"></div>
-                        <div class="absolute h-full w-[1px] bg-black/20 left-1/3"></div>
-                        <div class="absolute h-full w-[1px] bg-black/20 right-1/3"></div>
-                    </div>
-                    <i class="fas fa-rss text-2xl text-white/80 rotate-90"></i>
-                </div>
+                            <!-- Edit/Delete Actions (Hidden by default, shown on hover) -->
+                            <div class="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2" onclick="event.stopPropagation()">
+                                <a href="/admin/finance/wallets/edit/<%= w._id %>" class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white hover:text-blue-600 transition-colors">
+                                    <i class="fas fa-pencil-alt text-xs"></i>
+                                </a>
+                                <a href="/admin/finance/wallets/delete/<%= w._id %>" class="w-8 h-8 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white hover:text-red-600 transition-colors" onclick="return confirm('Are you sure you want to delete this wallet? This cannot be undone.')">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </a>
+                            </div>
 
-                <div>
-                    <p class="text-sm text-white/80 mb-2 font-mono tracking-widest">**** **** **** <%= w._id.toString().slice(-4).toUpperCase() %></p>
-                    <div class="mt-6 flex justify-between items-center">
-                        <div>
-                            <p class="text-sm text-white">Balance</p>
-                            <p class="text-xl font-bold text-white"><%= w.currency %> <%= w.balance.toLocaleString() %></p>
+                            <!-- Background Pattern -->
+                            <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+                            <div class="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
+                            
+                            <div class="relative z-10 flex flex-col h-full justify-between">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center gap-3">
+                                        <!-- Logo based on type/name (Simple heuristic) -->
+                                        <% let iconClass = 'fas fa-wallet'; %>
+                                        <% if (w.name.toLowerCase().includes('jazz')) iconClass = 'fas fa-music'; %>
+                                        <% if (w.name.toLowerCase().includes('easy')) iconClass = 'fas fa-mobile-alt'; %>
+                                        <% if (w.name.toLowerCase().includes('bank')) iconClass = 'fas fa-university'; %>
+                                        <% if (w.name.toLowerCase().includes('cash')) iconClass = 'fas fa-coins'; %>
+                                        
+                                        <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                            <i class="<%= iconClass %> text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-lg tracking-wide leading-tight"><%= w.name %></h4>
+                                            <span class="text-white/70 text-xs font-medium tracking-wider uppercase"><%= w.type %></span>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-wifi text-white/50 rotate-90 text-xl"></i>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between items-end mb-1">
+                                        <p class="text-sm text-white/80 font-mono tracking-widest">**** <%= w._id.toString().slice(-4).toUpperCase() %></p>
+                                        <% if (w.balance > 100000) { %>
+                                            <i class="fas fa-crown text-yellow-300 text-lg animate-pulse" title="High Value Wallet"></i>
+                                        <% } %>
+                                    </div>
+                                    <p class="text-3xl font-bold text-white tracking-tight wallet-balance" data-balance="<%= w.balance %>">
+                                        <span class="text-lg opacity-70 mr-1"><%= w.currency %></span><%= w.balance.toLocaleString() %>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex gap-2">
-                            <a href="/admin/finance/wallets/<%= w._id %>" class="text-gray-400 hover:text-blue-600 p-2 rounded-full transition-colors" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="/admin/finance/wallets/edit/<%= w._id %>" class="text-gray-400 hover:text-yellow-600 p-2 rounded-full transition-colors" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="/admin/finance/wallets/delete/<%= w._id %>" onclick="return confirm('Are you sure? This will delete the wallet and all associated records.')" class="text-gray-400 hover:text-red-600 p-2 rounded-full transition-colors" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                        </div>
                     </div>
+                <% }) %>
+                
+                <!-- Add New Card Placeholder -->
+                <div class="flex-shrink-0 w-full md:w-[100px] snap-center flex items-center justify-center">
+                    <a href="/admin/finance/wallets/add" class="w-14 h-14 rounded-full bg-white border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-all">
+                        <i class="fas fa-plus"></i>
+                    </a>
                 </div>
             </div>
         </div>
-    <% }) %>
+    <% } %>
+
+    <!-- 4. Wallet Insights & Activity Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Insights -->
+        <div class="space-y-6">
+            <h3 class="text-lg font-bold text-gray-800">Wallet Insights</h3>
+            
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Most Used</p>
+                        <p class="font-bold text-gray-900"><%= dashboard.insights.mostUsed ? dashboard.insights.mostUsed.name : '-' %></p>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+                    <div class="bg-purple-500 h-1.5 rounded-full" style="width: 70%"></div>
+                </div>
+                <p class="text-xs text-gray-400"><%= dashboard.insights.txnCount %> transactions this month</p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Highest Balance</p>
+                        <p class="font-bold text-gray-900"><%= dashboard.insights.highestBalance ? dashboard.insights.highestBalance.name : '-' %></p>
+                    </div>
+                </div>
+            </div>
+
+            <% if (dashboard.insights.lowBalance.length > 0) { %>
+                <div class="bg-red-50 rounded-2xl p-5 border border-red-100">
+                    <div class="flex items-center gap-3 mb-2">
+                        <i class="fas fa-exclamation-circle text-red-500"></i>
+                        <h4 class="font-bold text-red-700">Low Balance Alert</h4>
+                    </div>
+                    <ul class="space-y-1">
+                        <% dashboard.insights.lowBalance.forEach(w => { %>
+                            <li class="text-sm text-red-600 flex justify-between">
+                                <span><%= w.name %></span>
+                                <span class="font-medium">Rs <%= w.balance %></span>
+                            </li>
+                        <% }) %>
+                    </ul>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Right: Recent Activity Feed -->
+        <div class="lg:col-span-2">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-800">Recent Activity</h3>
+                <a href="/admin/finance" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View All</a>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <% if (dashboard.recentActivity.length === 0) { %>
+                    <div class="p-8 text-center text-gray-400">No recent activity</div>
+                <% } else { %>
+                    <div class="divide-y divide-gray-50">
+                        <% dashboard.recentActivity.forEach(item => { %>
+                            <div class="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                                <div class="flex items-center gap-4">
+                                    <!-- Icon based on type -->
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 
+                                        <%= item.type === 'income' ? 'bg-green-100 text-green-600' : 
+                                           item.type === 'expense' ? 'bg-red-100 text-red-600' : 
+                                           item.type === 'transfer' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600' %>">
+                                        <i class="fas 
+                                            <%= item.type === 'income' ? 'fa-arrow-down' : 
+                                               item.type === 'expense' ? 'fa-arrow-up' : 
+                                               item.type === 'transfer' ? 'fa-exchange-alt' : 'fa-hand-holding-usd' %>"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900 text-sm">
+                                            <%= item.title || item.source || (item.person ? item.person.name : 'Unknown') || 'Transfer' %>
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            <%= new Date(item.sortDate).toLocaleDateString() %> • 
+                                            <%= item.wallet ? item.wallet.name : (item.fromWallet ? item.fromWallet.name + ' -> ' + item.toWallet.name : 'Unknown') %>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-sm <%= item.type === 'income' || item.type === 'payment_received' ? 'text-green-600' : 'text-gray-900' %>">
+                                        <%= item.type === 'income' ? '+' : (item.type === 'expense' ? '–' : '') %> 
+                                        Rs <%= item.amount.toLocaleString() %>
+                                    </p>
+                                    <span class="text-[10px] uppercase tracking-wider font-medium text-gray-400"><%= item.type %></span>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Quick Transfer Modal -->
+<div id="transferModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeTransferModal()"></div>
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900">Quick Transfer</h3>
+            <button onclick="closeTransferModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form action="/admin/finance/wallets/transfer" method="POST" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">From</label>
+                    <select name="fromWallet" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <% wallets.forEach(w => { %>
+                            <option value="<%= w._id %>"><%= w.name %> (<%= w.balance %>)</option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="flex items-end justify-center pb-2">
+                    <i class="fas fa-arrow-right text-gray-400"></i>
+                </div>
+                <div class="col-span-2"> <!-- Fix grid layout for To -->
+                     <label class="block text-xs font-medium text-gray-500 mb-1">To</label>
+                    <select name="toWallet" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <% wallets.forEach(w => { %>
+                            <option value="<%= w._id %>"><%= w.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Amount</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">Rs</span>
+                    <input type="number" name="amount" required class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-lg font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-500 mb-1">Note (Optional)</label>
+                <input type="text" name="description" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="What's this for?">
+            </div>
+
+            <button type="submit" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors shadow-lg mt-2">
+                Transfer Now
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // 1. Toggle Balance Privacy
+    let balanceVisible = true;
+    const balanceDisplay = document.getElementById('totalBalanceDisplay');
+    const toggleIcon = document.getElementById('balanceToggleIcon');
+    const originalBalance = balanceDisplay.innerText;
+
+    function toggleBalance() {
+        balanceVisible = !balanceVisible;
+        if (balanceVisible) {
+            balanceDisplay.innerText = originalBalance;
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+            
+            // Show card balances
+            document.querySelectorAll('.wallet-balance').forEach(el => {
+                const bal = el.getAttribute('data-balance');
+                el.innerHTML = `<span class="text-lg opacity-70 mr-1">PKR</span>${parseInt(bal).toLocaleString()}`;
+            });
+        } else {
+            balanceDisplay.innerText = 'PKR •••••••';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+            
+            // Hide card balances
+            document.querySelectorAll('.wallet-balance').forEach(el => {
+                el.innerText = '•••••••';
+            });
+        }
+    }
+
+    // 2. Modal Logic
+    function openTransferModal() {
+        document.getElementById('transferModal').classList.remove('hidden');
+    }
+
+    function closeTransferModal() {
+        document.getElementById('transferModal').classList.add('hidden');
+    }
+
+    // 3. Confetti on High Balance (Bonus)
+    <% if (dashboard.totalBalance > 100000) { %>
+        // Only trigger if it's a fresh load or specific event? 
+        // Let's just do a subtle one on load for "Rich" feeling
+        window.addEventListener('load', () => {
+            // confetti({
+            //     particleCount: 50,
+            //     spread: 60,
+            //     origin: { y: 0.7 },
+            //     colors: ['#FFD700', '#FFA500'] // Gold colors
+            // });
+        });
+    <% } %>
+</script>
+
+<style>
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+</style>

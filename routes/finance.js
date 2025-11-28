@@ -836,34 +836,152 @@ router.post('/expenses/:id/pay', async (req, res) => {
 // --- Income Management ---
 router.get('/income', async (req, res) => {
     try {
-        // Check Cache
-        if (redisClient.isReady) {
-            const cachedIncome = await redisClient.get('finance:income');
-            if (cachedIncome) {
-                console.log('Cache Hit: Income');
-                return res.render('admin/finance/income/list', {
-                    title: 'Income',
-                    income: JSON.parse(cachedIncome),
-                    layout: 'layouts/adminLayout'
-                });
-            }
+        if (require('mongoose').connection.readyState !== 1) {
+            return res.render('offline', { layout: false });
         }
 
-        console.log('Cache Miss: Income');
-        const income = await Income.find().populate('wallet').populate('category').sort({ date: -1 });
+        // 1. Fetch Basic List (for the table/cards)
+        // We'll fetch all for now, or limit to recent 50 for performance if needed.
+        // The requirement implies a list, let's fetch recent 100.
+        const incomeList = await Income.find()
+            .populate('wallet')
+            .populate('category')
+            .sort({ date: -1 })
+            .limit(100);
 
-        // Set Cache (1 hour)
-        if (redisClient.isReady) {
-            try {
-                await redisClient.set('finance:income', JSON.stringify(income), { EX: 3600 });
-            } catch (err) {
-                console.log('Redis cache error:', err.message);
+        // 2. Calculate Summary Metrics
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+        const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const thisYearStart = new Date(now.getFullYear(), 0, 1);
+
+        const incomeAgg = await Income.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    allTime: { $sum: "$amount" },
+                    today: {
+                        $sum: {
+                            $cond: [{ $gte: ["$date", todayStart] }, "$amount", 0]
+                        }
+                    },
+                    yesterday: {
+                        $sum: {
+                            $cond: [{ $and: [{ $gte: ["$date", yesterdayStart] }, { $lt: ["$date", yesterdayEnd] }] }, "$amount", 0]
+                        }
+                    },
+                    thisMonth: {
+                        $sum: {
+                            $cond: [{ $gte: ["$date", thisMonthStart] }, "$amount", 0]
+                        }
+                    },
+                    thisYear: {
+                        $sum: {
+                            $cond: [{ $gte: ["$date", thisYearStart] }, "$amount", 0]
+                        }
+                    }
+                }
             }
+        ]);
+
+        const metrics = incomeAgg.length > 0 ? incomeAgg[0] : { allTime: 0, today: 0, yesterday: 0, thisMonth: 0, thisYear: 0 };
+
+        // Calculate Trend (Today vs Yesterday)
+        let todayTrend = 0;
+        if (metrics.yesterday > 0) {
+            todayTrend = Math.round(((metrics.today - metrics.yesterday) / metrics.yesterday) * 100);
+        } else if (metrics.today > 0) {
+            todayTrend = 100; // 100% increase if yesterday was 0
         }
+
+        // 3. Chart Data: Income Flow (This Year Monthly)
+        const monthlyTrendAgg = await Income.aggregate([
+            { $match: { date: { $gte: thisYearStart } } },
+            {
+                $group: {
+                    _id: { month: { $month: "$date" } },
+                    total: { $sum: "$amount" }
+                }
+            },
+            { $sort: { "_id.month": 1 } }
+        ]);
+
+        const incomeTrend = Array(12).fill(0);
+        monthlyTrendAgg.forEach(item => {
+            incomeTrend[item._id.month - 1] = item.total;
+        });
+
+        // 4. Source Breakdown (Donut Chart) - Top 5 Categories/Sources
+        // Using 'source' field as per requirement "Freelance, Salary, Ami"
+        // But 'source' is free text. Let's group by 'source' text.
+        const sourceBreakdownAgg = await Income.aggregate([
+            { $match: { date: { $gte: thisYearStart } } }, // Breakdown for this year
+            { $group: { _id: "$source", total: { $sum: "$amount" } } },
+            { $sort: { total: -1 } },
+            { $limit: 5 }
+        ]);
+
+        const sourceBreakdown = {
+            labels: sourceBreakdownAgg.map(i => i._id),
+            data: sourceBreakdownAgg.map(i => i.total)
+        };
+
+        // 5. Quick Insights
+        // Highest Income Day
+        const highestDayAgg = await Income.aggregate([
+            { $match: { date: { $gte: thisYearStart } } },
+            { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, total: { $sum: "$amount" }, source: { $first: "$source" } } },
+            { $sort: { total: -1 } },
+            { $limit: 1 }
+        ]);
+        const highestDay = highestDayAgg.length ? highestDayAgg[0] : { total: 0, source: '-' };
+
+        // Avg Daily Income (This Month)
+        const daysPassed = Math.max(1, now.getDate());
+        const avgDailyIncome = Math.round(metrics.thisMonth / daysPassed);
+
+        // Top Source This Month
+        const topSourceMonthAgg = await Income.aggregate([
+            { $match: { date: { $gte: thisMonthStart } } },
+            { $group: { _id: "$source", total: { $sum: "$amount" } } },
+            { $sort: { total: -1 } },
+            { $limit: 1 }
+        ]);
+        const topSourceMonth = topSourceMonthAgg.length ? topSourceMonthAgg[0]._id : '-';
+
+        // Celebration
+        const isGreatDay = metrics.today > avgDailyIncome;
+
+        // Wallets & Categories for Filters/Add Modal
+        const wallets = await Wallet.find().sort({ name: 1 });
+        const categories = await Category.find({ type: 'income' }).sort({ name: 1 });
 
         res.render('admin/finance/income/list', {
-            title: 'Income',
-            income,
+            title: 'Income Sources',
+            income: incomeList,
+            wallets,
+            categories,
+            dashboard: {
+                metrics: {
+                    today: metrics.today,
+                    todayTrend,
+                    month: metrics.thisMonth,
+                    year: metrics.thisYear,
+                    allTime: metrics.allTime
+                },
+                charts: {
+                    trend: incomeTrend,
+                    breakdown: sourceBreakdown
+                },
+                stats: {
+                    highestDay,
+                    avgDaily: avgDailyIncome,
+                    topSource: topSourceMonth
+                },
+                isGreatDay
+            },
             layout: 'layouts/adminLayout'
         });
     } catch (err) {
@@ -1249,39 +1367,87 @@ router.get('/reports/export/excel', async (req, res) => {
 // --- Wallet Management ---
 router.get('/wallets', async (req, res) => {
     try {
-        // Check Cache
-        if (redisClient.isReady) {
-            const cachedWallets = await redisClient.get('finance:wallets');
-            if (cachedWallets) {
-                console.log('Cache Hit: Wallets');
-                return res.render('admin/finance/wallets/list', {
-                    title: 'Wallets & Accounts',
-                    wallets: JSON.parse(cachedWallets),
-                    layout: 'layouts/adminLayout'
-                });
-            }
-        }
-
-
-
-        console.log('Cache Miss: Wallets');
         if (require('mongoose').connection.readyState !== 1) {
             return res.render('offline', { layout: false });
         }
+
+        // 1. Fetch Wallets
         const wallets = await Wallet.find().sort({ name: 1 });
 
-        // Set Cache (1 hour)
-        if (redisClient.isReady) {
-            try {
-                await redisClient.set('finance:wallets', JSON.stringify(wallets), { EX: 3600 });
-            } catch (err) {
-                console.log('Redis cache error:', err.message);
+        // 2. Calculate Total Balance
+        const totalBalance = wallets.reduce((acc, w) => acc + w.balance, 0);
+
+        // 3. Fetch Recent Activity (Merged Stream)
+        // We need a unified view of Income, Expense, Transfers, and Payments
+        const limit = 20;
+
+        const [expenses, income, payments, transfers] = await Promise.all([
+            Expense.find().sort({ date: -1 }).limit(limit).populate('wallet').lean(),
+            Income.find().sort({ date: -1 }).limit(limit).populate('wallet').lean(),
+            Payment.find().sort({ date: -1 }).limit(limit).populate('wallet').populate('person').lean(),
+            Transfer.find().sort({ date: -1 }).limit(limit).populate('fromWallet').populate('toWallet').lean()
+        ]);
+
+        let recentActivity = [
+            ...expenses.map(e => ({ ...e, type: 'expense', sortDate: e.date })),
+            ...income.map(i => ({ ...i, type: 'income', sortDate: i.date })),
+            ...payments.map(p => ({ ...p, type: 'payment', sortDate: p.date })),
+            ...transfers.map(t => ({ ...t, type: 'transfer', sortDate: t.date }))
+        ];
+
+        // Sort and Slice
+        recentActivity.sort((a, b) => new Date(b.sortDate) - new Date(a.sortDate));
+        recentActivity = recentActivity.slice(0, 20);
+
+        // 4. Wallet Insights
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        // Most Used Wallet (This Month) - Count transactions
+        // We'll do a quick aggregation on Expenses (usually most frequent) + Income
+        const expenseCount = await Expense.aggregate([
+            { $match: { date: { $gte: startOfMonth } } },
+            { $group: { _id: "$wallet", count: { $sum: 1 } } }
+        ]);
+
+        // Map counts to wallet IDs
+        const walletCounts = {};
+        expenseCount.forEach(item => {
+            if (item._id) walletCounts[item._id.toString()] = (walletCounts[item._id.toString()] || 0) + item.count;
+        });
+
+        // Find max
+        let mostUsedWalletId = null;
+        let maxCount = 0;
+        Object.entries(walletCounts).forEach(([id, count]) => {
+            if (count > maxCount) {
+                maxCount = count;
+                mostUsedWalletId = id;
             }
-        }
+        });
+
+        const mostUsedWallet = wallets.find(w => w._id.toString() === mostUsedWalletId) || (wallets.length > 0 ? wallets[0] : null);
+        const totalTransactionsMonth = Object.values(walletCounts).reduce((a, b) => a + b, 0);
+
+        // Highest Balance
+        const highestBalanceWallet = [...wallets].sort((a, b) => b.balance - a.balance)[0];
+
+        // Low Balance Wallets (< 1000)
+        const lowBalanceWallets = wallets.filter(w => w.balance < 1000);
 
         res.render('admin/finance/wallets/list', {
             title: 'Wallets & Accounts',
             wallets,
+            dashboard: {
+                totalBalance,
+                recentActivity,
+                insights: {
+                    mostUsed: mostUsedWallet,
+                    txnCount: totalTransactionsMonth,
+                    highestBalance: highestBalanceWallet,
+                    lowBalance: lowBalanceWallets
+                }
+            },
             layout: 'layouts/adminLayout'
         });
     } catch (err) {
