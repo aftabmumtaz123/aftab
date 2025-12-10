@@ -1257,7 +1257,10 @@ router.get('/reports/export/pdf', async (req, res) => {
             date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
         });
 
-        const browser = await puppeteer.launch({ headless: 'new' });
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
         const page = await browser.newPage();
         await page.setContent(html, { waitUntil: 'networkidle0' });
         const pdf = await page.pdf({ format: 'A4', printBackground: true });

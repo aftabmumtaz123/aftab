@@ -30,8 +30,12 @@
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <aside class="w-72 bg-white border-r border-gray-200 flex-shrink-0 hidden md:flex flex-col shadow-sm z-10">
-            <div class="p-6 flex items-center justify-center border-b border-gray-100">
+            <div class="p-6 flex items-center justify-between border-b border-gray-100">
                 <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Admin<span class="text-blue-600">Panel</span></h1>
+                <!-- Close button for mobile -->
+                <button id="mobile-sidebar-close" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
             </div>
             <nav class="flex-1 overflow-y-auto py-6">
                 <ul class="space-y-1 px-4">
@@ -339,19 +343,38 @@
     <script src="/js/notifications.js"></script>
     <script src="/js/offline-sync.js?v=5"></script>
     <script>
-        // Simple mobile menu toggle
+        // Mobile menu toggle with close button and backdrop
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const sidebar = document.querySelector('aside');
+        const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
+        
+        // Create backdrop
+        const backdrop = document.createElement('div');
+        backdrop.id = 'sidebar-backdrop';
+        backdrop.className = 'fixed inset-0 bg-black bg-opacity-50 z-40 hidden';
+        document.body.appendChild(backdrop);
+        
+        function openSidebar() {
+            sidebar.classList.remove('hidden');
+            sidebar.classList.add('flex', 'fixed', 'inset-0', 'z-50');
+            backdrop.classList.remove('hidden');
+        }
+        
+        function closeSidebar() {
+            sidebar.classList.add('hidden');
+            sidebar.classList.remove('flex', 'fixed', 'inset-0', 'z-50');
+            backdrop.classList.add('hidden');
+        }
         
         if(mobileMenuBtn) {
-            mobileMenuBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('hidden');
-                sidebar.classList.toggle('flex');
-                sidebar.classList.toggle('fixed');
-                sidebar.classList.toggle('inset-0');
-                sidebar.classList.toggle('z-50');
-            });
+            mobileMenuBtn.addEventListener('click', openSidebar);
         }
+        
+        if(mobileSidebarClose) {
+            mobileSidebarClose.addEventListener('click', closeSidebar);
+        }
+        
+        backdrop.addEventListener('click', closeSidebar);
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
