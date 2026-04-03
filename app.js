@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
+const User = require('./models/User')
 
 const { checkUser } = require('./middleware/authMiddleware');
 
@@ -57,10 +58,17 @@ const connectDB = async () => {
     }
 };
 
-// Connect to DB but don't block server startup
+
 connectDB();
 
-// Handle MongoDB errors after initial connection
+
+const whatsappService = require('./utils/whatsappService');
+app.locals.whatsappStatus = whatsappService.whatsappStatus;
+
+
+require('./jobs/cronJobs');
+
+
 mongoose.connection.on('error', err => {
     console.error('MongoDB Runtime Error:', err.message);
 });
@@ -68,6 +76,9 @@ mongoose.connection.on('error', err => {
 mongoose.connection.on('disconnected', () => {
     console.log('MongoDB Disconnected');
 });
+
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

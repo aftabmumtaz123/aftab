@@ -40,13 +40,11 @@ const notificationService = {
     },
 
     // Send Web Push
-    sendPush: async (payload) => {
+    sendPush: async (payload, ownerId) => {
         try {
-            // Fetch all subscriptions from Redis or DB (Assuming we store them in Redis for now or a separate model)
-            // For simplicity, let's assume we store subscriptions in a Redis set 'push_subscriptions'
-            if (!redisClient?.isReady) return;
+            if (!redisClient?.isReady || !ownerId) return;
 
-            const subscriptions = await redisClient.sMembers('push_subscriptions');
+            const subscriptions = await redisClient.sMembers(`push_subscriptions:${ownerId}`);
 
             const notifications = subscriptions.map(sub => {
                 const subscription = JSON.parse(sub);
@@ -54,7 +52,7 @@ const notificationService = {
                     .catch(err => {
                         if (err.statusCode === 410 || err.statusCode === 404) {
                             // Subscription is invalid, remove it
-                            redisClient.sRem('push_subscriptions', sub);
+                            redisClient.sRem(`push_subscriptions:${ownerId}`, sub);
                         } else {
                             console.error('Error sending push:', err);
                         }
@@ -74,16 +72,14 @@ const notificationService = {
             const notification = await Notification.create(data);
 
             // 2. Trigger Push (if applicable)
-            // We only send push for important events, or we can send for all.
-            // Let's send for all "createNotification" calls as they are usually important.
             const pushPayload = {
                 title: data.title,
                 body: data.message,
                 url: data.link || '/admin/dashboard',
-                icon: '/images/logo.png' // Ensure this exists or use a default
+                icon: '/images/logo.png'
             };
 
-            await notificationService.sendPush(pushPayload);
+            await notificationService.sendPush(pushPayload, data.owner);
 
             return notification;
         } catch (error) {

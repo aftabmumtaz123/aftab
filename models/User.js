@@ -10,6 +10,27 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    role: {
+        type: String,
+        enum: ['admin', 'user'],
+        default: 'user'
+    },
+    email: {
+        type: String,
+        default: ''
+    },
+    phone: {
+        type: String,
+        default: ''
+    },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
 });
 

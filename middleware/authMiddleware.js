@@ -12,11 +12,7 @@ const requireAuth = async (req, res, next) => {
             } else {
                 // Check if DB is connected
                 if (require('mongoose').connection.readyState !== 1) {
-                    console.log('DB disconnected, skipping auth check (allowing offline access if cached)');
-                    // If offline, we might want to allow access if it's a GET request (served by SW)
-                    // But if it reaches here, it means SW didn't handle it or it's a fresh request.
-                    // For now, let's allow it to proceed so the offline page can be rendered if needed
-                    // or if the page doesn't strictly need user data.
+                    console.log('DB disconnected, skipping auth check');
                     res.locals.user = null;
                     next();
                     return;
@@ -24,6 +20,11 @@ const requireAuth = async (req, res, next) => {
 
                 try {
                     let user = await User.findById(decodedToken.id);
+                    if (!user || !user.isActive) {
+                        res.clearCookie('jwt');
+                        return res.redirect('/auth/login');
+                    }
+                    req.user = user;
                     res.locals.user = user;
                     next();
                 } catch (dbErr) {
@@ -37,7 +38,14 @@ const requireAuth = async (req, res, next) => {
     }
 };
 
-// Check current user (for public views if needed, or just to pass user info)
+const requireAdmin = async (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        return next();
+    }
+    return res.status(403).send('Access denied. Admin privileges required.');
+};
+
+// Check current user (for public views)
 const checkUser = (req, res, next) => {
     const token = req.cookies.jwt;
     if (token) {
@@ -47,9 +55,7 @@ const checkUser = (req, res, next) => {
                 res.locals.user = null;
                 next();
             } else {
-                // Check if DB is connected before querying
                 if (require('mongoose').connection.readyState !== 1) {
-                    // console.log('DB disconnected, skipping user fetch'); // Optional: uncomment for debug
                     res.locals.user = null;
                     next();
                     return;
@@ -57,10 +63,10 @@ const checkUser = (req, res, next) => {
 
                 try {
                     let user = await User.findById(decodedToken.id);
+                    req.user = user;
                     res.locals.user = user;
                     next();
                 } catch (dbErr) {
-                    // Suppress connection errors in offline mode
                     if (dbErr.message.includes('buffering timed out') || dbErr.code === 'ENOTFOUND' || dbErr.message.includes('getaddrinfo')) {
                         console.log('Offline mode: DB unreachable (checkUser skipped)');
                     } else {
@@ -77,4 +83,4 @@ const checkUser = (req, res, next) => {
     }
 };
 
-module.exports = { requireAuth, checkUser };
+module.exports = { requireAuth, requireAdmin, checkUser };

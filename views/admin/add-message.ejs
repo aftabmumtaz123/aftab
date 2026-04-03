@@ -1,0 +1,347 @@
+<div class="container-fluid py-8 px-4 sm:px-6 md:px-8 max-w-4xl mx-auto">
+
+    <!-- 1 & 2. Page Title + Subtitle -->
+    <div class="mb-8 text-center md:text-left">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Add Message Template</h1>
+        <p class="mt-2 text-sm text-gray-500 font-medium">Create and manage WhatsApp message templates for automation</p>
+    </div>
+
+    <!-- 1. Card Container -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
+        <!-- Optional Decorative Top Border -->
+        <div class="h-1 w-full bg-gradient-to-r from-indigo-500 to-blue-500"></div>
+
+        <div class="flex flex-col lg:flex-row">
+            
+            <!-- Left Side: Form Fields -->
+            <div class="w-full lg:w-3/5 p-6 sm:p-8 md:p-10 border-b lg:border-b-0 lg:border-r border-gray-100">
+                <form id="templateForm" action="/admin/messages" method="POST" enctype="multipart/form-data" novalidate>
+                    
+                    <!-- 3. Group Fields Properly (Section 1) -->
+                    <div class="mb-8">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-5 pb-2 border-b border-gray-50">🧾 Basic Info</h3>
+                        
+                        <div class="space-y-5">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Template Name <span class="text-red-500">*</span></label>
+                                <!-- 4. Modern Input Styling -->
+                                <input type="text" id="name" name="name" required placeholder='e.g., "Payment Confirmation"' class="block w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm shadow-sm group-hover:border-gray-300">
+                                <p class="mt-1.5 text-[11px] text-red-500 hidden" id="err-name">Template Name is required.</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2 mt-1">System Type <span class="text-red-500">*</span></label>
+                                <!-- 5. Replace Dropdown with Badge Select -->
+                                <input type="hidden" name="type" id="typeInput" required>
+                                <div class="flex flex-wrap gap-2" id="typeSelection">
+                                    <button type="button" data-val="PaymentConfirmation" data-color="green" class="type-btn px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-green-500">Payment</button>
+                                    <button type="button" data-val="DueReminder" data-color="yellow" class="type-btn px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-yellow-500">Due Reminder</button>
+                                    <button type="button" data-val="WeeklyReminder" data-color="blue" class="type-btn px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500">Weekly Reminder</button>
+                                    <button type="button" data-val="Custom" data-color="purple" class="type-btn px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500">Custom</button>
+                                </div>
+                                <p class="mt-1.5 text-[11px] text-red-500 hidden" id="err-type">Please select a system type.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Group Fields Properly (Section 2) -->
+                    <div class="mb-8">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-5 pb-2 border-b border-gray-50">💬 Message Content</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-end mb-1">
+                                <label for="text" class="block text-sm font-medium text-gray-700">Message Text <span class="text-red-500">*</span></label>
+                            </div>
+                            
+                            <textarea id="text" name="text" rows="5" required class="block w-full px-4 py-3 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm shadow-sm" placeholder="Type your WhatsApp message here..."></textarea>
+                            <p class="mt-1.5 text-[11px] text-red-500 hidden" id="err-text">Message text cannot be empty.</p>
+                            
+                            <div class="bg-blue-50/50 p-3 rounded-lg border border-blue-100 flex flex-wrap gap-2 items-center">
+                                <span class="text-xs font-medium text-blue-800 mr-1">Variables:</span>
+                                <button type="button" class="var-btn inline-flex items-center px-2 py-1 rounded-md bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors text-xs font-mono shadow-sm" data-tag="{{name}}">{{name}}</button>
+                                <button type="button" class="var-btn inline-flex items-center px-2 py-1 rounded-md bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors text-xs font-mono shadow-sm" data-tag="{{amount}}">{{amount}}</button>
+                                <button type="button" class="var-btn inline-flex items-center px-2 py-1 rounded-md bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors text-xs font-mono shadow-sm" data-tag="{{dueDate}}">{{dueDate}}</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Group Fields Properly (Section 3) -->
+                    <div class="mb-6">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-5 pb-2 border-b border-gray-50">🖼 Media (Optional)</h3>
+                        
+                        <!-- 7. File Upload UI Improvement -->
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors group cursor-pointer relative" id="drop-zone">
+                            <input type="file" id="media" name="media" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <div class="space-y-2 text-center z-0" id="upload-content">
+                                <div class="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-indigo-100 transition-colors">
+                                    <i class="fas fa-cloud-upload-alt text-gray-400 group-hover:text-indigo-500 text-xl"></i>
+                                </div>
+                                <div class="flex text-sm text-gray-600 justify-center">
+                                    <span class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
+                                        <span>Upload a file</span>
+                                    </span>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                            </div>
+                            <div id="file-preview-container" class="hidden text-center w-full relative z-20">
+                                <img id="upload-preview-img" src="" class="mx-auto h-24 object-cover rounded-lg shadow-sm border border-gray-200 mb-2">
+                                <p id="upload-filename" class="text-sm font-medium text-gray-800 truncate px-4"></p>
+                                <button type="button" id="remove-file-btn" class="mt-2 text-xs text-red-500 hover:text-red-700 font-medium">Remove image</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 8. Button Design -->
+                    <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-4">
+                        <a href="/admin/messages" class="px-5 py-2.5 border border-gray-200 text-gray-600 font-medium text-sm rounded-xl hover:bg-gray-50 transition-colors">Cancel</a>
+                        <button type="submit" id="saveBtn" class="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-medium text-sm rounded-xl shadow-md hover:shadow-lg hover:from-indigo-700 hover:to-blue-700 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-save mr-2"></i> Save Template
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Right Side: 6. Live Message Preview -->
+            <div class="w-full lg:w-2/5 bg-gray-50/50 p-6 sm:p-8 lg:p-10 flex flex-col pt-10">
+                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6 pb-2 border-b border-gray-200/60 sticky top-0">👀 Live Preview</h3>
+
+                 <div class="bg-gray-100/80 rounded-[30px] p-4 shadow-inner border border-gray-200/50 mx-auto w-full max-w-sm sticky top-20">
+                    <!-- WhatsApp Header -->
+                     <div class="bg-teal-600 rounded-t-[18px] p-3 flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center mr-3 overflow-hidden border border-teal-700">
+                            <i class="fas fa-robot text-gray-100"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-semibold leading-tight">Automation</p>
+                            <p class="text-teal-100 text-[10px]">Business Account</p>
+                        </div>
+                     </div>
+                     
+                     <!-- WhatsApp Chat Background -->
+                     <div class="bg-[#E5DDD5] p-4 h-96 overflow-y-auto relative rounded-b-[18px]" style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h20v20H0V0zm10 10l10-10H0l10 10z\' fill=\'rgba(0,0,0,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E');">
+                        
+                        <!-- Simulated Date -->
+                        <div class="flex justify-center mb-4">
+                            <span class="bg-blue-100/80 text-[#54656f] text-[11px] px-3 py-1 rounded-lg uppercase shadow-sm">Today</span>
+                        </div>
+
+                        <!-- Message Bubble -->
+                        <div class="bg-white rounded-lg rounded-tl-none p-2 shadow-sm max-w-[90%] relative text-[#111B21] text-[14.2px] leading-[19px] break-words">
+                            <!-- Tail -->
+                            <div class="absolute top-0 -left-2 w-0 h-0 border-r-[8px] border-white border-b-[8px] border-transparent"></div>
+                            
+                            <!-- Media -->
+                            <div id="liveMediaContainer" class="hidden mb-2">
+                                <img id="liveMediaImg" src="" class="w-full h-auto max-h-40 object-cover rounded shadow-sm border border-gray-100">
+                            </div>
+
+                            <!-- Text -->
+                            <div id="liveTextContent" class="whitespace-pre-wrap font-[Helvetica,Arial,sans-serif] pb-3 text-sm text-gray-500 italic">Start typing to see preview...</div>
+                            
+                            <!-- Time -->
+                            <div class="absolute bottom-1 right-2 text-[#687782] text-[10px] flex items-center bg-white/80 rounded px-1">
+                                <span id="liveTime">12:00 PM</span>
+                                <i class="fas fa-check-double text-blue-400 ml-1" style="font-size: 10px;"></i>
+                            </div>
+                        </div>
+
+                     </div>
+                 </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // System Type Button Selector
+    const typeInput = document.getElementById('typeInput');
+    const typeBtns = document.querySelectorAll('.type-btn');
+    const nameInput = document.getElementById('name');
+    const textInput = document.getElementById('text');
+
+    // 11. Auto-fill logic templates
+    const autoFillTemplates = {
+        'PaymentConfirmation': {
+            name: "Default Payment Confirmation",
+            text: "Hello {{name}} 👋\n\nWe have successfully received your payment of Rs {{amount}} ✅.\n\nThank you!"
+        },
+        'DueReminder': {
+            name: "Friendly Due Reminder",
+            text: "Hi {{name}} 🕒\n\nJust a friendly reminder that a payment of Rs {{amount}} is due on {{dueDate}}.\n\nPlease arrange early. Thanks!"
+        },
+        'WeeklyReminder': {
+            name: "Weekly Overdue Alert",
+            text: "Hello {{name}} ⚠️\n\nYour payment of Rs {{amount}} is now overdue since {{dueDate}}.\n\nPlease clear your pending balance immediately to avoid issues."
+        }
+    };
+
+    typeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Unstyle all
+            typeBtns.forEach(b => {
+                b.classList.remove('ring-2', 'ring-offset-1');
+                b.classList.replace('bg-' + b.dataset.color + '-50', 'hover:bg-gray-50');
+                b.classList.replace('text-' + b.dataset.color + '-700', 'text-gray-600');
+                b.classList.replace('border-' + b.dataset.color + '-500', 'border-gray-200');
+            });
+            // Style selected
+            const c = btn.dataset.color;
+            btn.classList.add('ring-2', 'ring-offset-1', `ring-${c}-500`);
+            btn.classList.replace('hover:bg-gray-50', `bg-${c}-50`);
+            btn.classList.replace('text-gray-600', `text-${c}-700`);
+            btn.classList.replace('border-gray-200', `border-${c}-500`);
+            
+            typeInput.value = btn.dataset.val;
+
+            // Auto-fill trigger if fields are empty
+            const tData = autoFillTemplates[btn.dataset.val];
+            if (tData) {
+                if(!nameInput.value) nameInput.value = tData.name;
+                if(!textInput.value) {
+                    textInput.value = tData.text;
+                    updatePreview();
+                }
+            }
+            
+            document.getElementById('err-type').classList.add('hidden');
+        });
+    });
+
+    // Variables Click logic
+    const varBtns = document.querySelectorAll('.var-btn');
+    varBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tag = btn.dataset.tag;
+            const startPos = textInput.selectionStart;
+            const endPos = textInput.selectionEnd;
+            textInput.value = textInput.value.substring(0, startPos) + tag + textInput.value.substring(endPos, textInput.value.length);
+            textInput.focus();
+            textInput.selectionStart = startPos + tag.length;
+            textInput.selectionEnd = startPos + tag.length;
+            updatePreview();
+        });
+    });
+
+    // Live Preview Logic
+    const liveTextContent = document.getElementById('liveTextContent');
+    function updatePreview() {
+        let val = textInput.value;
+        if (!val) {
+            liveTextContent.innerHTML = '<span class="text-gray-400 italic">Start typing to see preview...</span>';
+            return;
+        }
+        
+        // Replace variables with fake data for display
+        val = val.replace(/{{name}}/g, '<strong>Ali</strong>')
+                 .replace(/{{amount}}/g, '<strong>5000</strong>')
+                 .replace(/{{dueDate}}/g, '<strong>' + new Date().toLocaleDateString() + '</strong>');
+        
+        // Convert newlines to breaks
+        val = val.replace(/\n/g, '<br>');
+
+        liveTextContent.innerHTML = val;
+        liveTextContent.classList.remove('text-gray-500', 'italic', 'text-sm');
+    }
+
+    textInput.addEventListener('input', updatePreview);
+
+    // Initial time set
+    document.getElementById('liveTime').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // File Upload Preview
+    const fileInput = document.getElementById('media');
+    const uploadContent = document.getElementById('upload-content');
+    const previewContainer = document.getElementById('file-preview-container');
+    const previewImg = document.getElementById('upload-preview-img');
+    const filenameEl = document.getElementById('upload-filename');
+    const removeBtn = document.getElementById('remove-file-btn');
+    const dropZone = document.getElementById('drop-zone');
+    
+    // Live WhatsApp Media
+    const liveMediaContainer = document.getElementById('liveMediaContainer');
+    const liveMediaImg = document.getElementById('liveMediaImg');
+
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            filenameEl.textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                liveMediaImg.src = e.target.result;
+                
+                uploadContent.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                liveMediaContainer.classList.remove('hidden');
+                dropZone.classList.replace('hover:bg-indigo-50/30', 'bg-white');
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    removeBtn.addEventListener('click', function(e) {
+        e.stopPropagation(); // prevent triggering file dialog
+        e.preventDefault();
+        fileInput.value = '';
+        uploadContent.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+        liveMediaContainer.classList.add('hidden');
+        dropZone.classList.replace('bg-white', 'hover:bg-indigo-50/30');
+    });
+
+    // 9. Client Side Validation
+    const form = document.getElementById('templateForm');
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        
+        if (!nameInput.value.trim()) {
+            document.getElementById('err-name').classList.remove('hidden');
+            nameInput.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+            valid = false;
+        } else {
+            document.getElementById('err-name').classList.add('hidden');
+            nameInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+        }
+
+        if (!typeInput.value) {
+            document.getElementById('err-type').classList.remove('hidden');
+            valid = false;
+        } else {
+            document.getElementById('err-type').classList.add('hidden');
+        }
+
+        if (!textInput.value.trim()) {
+            document.getElementById('err-text').classList.remove('hidden');
+            textInput.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+            valid = false;
+        } else {
+            document.getElementById('err-text').classList.add('hidden');
+            textInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+        }
+
+        if (!valid) {
+            e.preventDefault();
+            // Optional: Scroll to first error
+        } else {
+            document.getElementById('saveBtn').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            document.getElementById('saveBtn').classList.add('opacity-75', 'cursor-not-allowed');
+        }
+    });
+
+    // Clear validation styling on input
+    nameInput.addEventListener('input', () => {
+        document.getElementById('err-name').classList.add('hidden');
+        nameInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+    });
+    textInput.addEventListener('input', () => {
+        document.getElementById('err-text').classList.add('hidden');
+        textInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+        updatePreview();
+    });
+
+</script>

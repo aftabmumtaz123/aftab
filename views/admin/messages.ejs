@@ -1,0 +1,340 @@
+<div class="container-fluid py-6 px-4 md:px-8 max-w-7xl mx-auto">
+
+    <!-- 1. Page Title & Action Button -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Message Templates</h1>
+            <p class="text-gray-500 mt-1 font-medium">Manage your WhatsApp automation messages</p>
+        </div>
+        <div class="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-3">
+            <a href="/admin/messages/add" class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow transition-all duration-200 transform hover:-translate-y-0.5 whitespace-nowrap">
+                <i class="fas fa-plus mr-2"></i> New Template
+            </a>
+        </div>
+    </div>
+
+    <!-- 11. Stats Header & Status -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center transition-all hover:shadow-md">
+            <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mr-4">
+                <i class="fas fa-layer-group text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Total Templates</p>
+                <h3 class="text-2xl font-bold text-gray-900"><%= stats.total %></h3>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center transition-all hover:shadow-md">
+            <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 mr-4">
+                <i class="fas fa-check-circle text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Active</p>
+                <h3 class="text-2xl font-bold text-gray-900"><%= stats.active %></h3>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center transition-all hover:shadow-md">
+            <div class="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600 mr-4">
+                <i class="fas fa-clock text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Last Updated</p>
+                <h3 class="text-lg font-bold text-gray-900 mt-1">
+                    <% if(stats.total > 0) { %>
+                        <%= new Date(stats.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+                    <% } else { %>
+                        N/A
+                    <% } %>
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Card Dashboard -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        
+        <!-- 6. Search + Filter Bar -->
+        <div class="p-5 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="w-full sm:w-96 relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <input type="text" id="searchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all" placeholder="Search templates...">
+            </div>
+            <div class="w-full sm:w-auto">
+                <select id="filterType" class="block w-full pl-3 pr-10 py-2 text-base border-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-xl transition-all">
+                    <option value="All">All Types</option>
+                    <option value="PaymentConfirmation">Payment Confirmation</option>
+                    <option value="DueReminder">Due Reminder</option>
+                    <option value="WeeklyReminder">Weekly Reminder</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 3. Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="templatesTable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">System Type</th>
+                        <th scope="col" class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Preview</th>
+                        <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    <% if (messages.length > 0) { %>
+                        <% messages.forEach(msg => { %>
+                            <!-- 10. Micro-interactions: hover:bg-gray-50 transition-colors -->
+                            <tr class="hover:bg-indigo-50/30 transition-colors duration-150 template-row" data-type="<%= msg.type %>" data-name="<%= msg.name.toLowerCase() %>">
+                                
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <% if (msg.mediaUrl) { %>
+                                            <div class="flex-shrink-0 h-10 w-10 relative group">
+                                                <img class="h-10 w-10 rounded-lg object-cover border border-gray-200" src="<%= msg.mediaUrl %>" alt="Media preview">
+                                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg cursor-pointer" onclick="openPreviewModal('<%= msg._id %>')">
+                                                    <i class="fas fa-search-plus text-white text-sm"></i>
+                                                </div>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="flex-shrink-0 h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400">
+                                                <i class="fas fa-align-left"></i>
+                                            </div>
+                                        <% } %>
+                                        <div class="ml-4 cursor-pointer" onclick="openPreviewModal('<%= msg._id %>')">
+                                            <!-- Bold Name -->
+                                            <div class="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors"><%= msg.name %></div>
+                                            <div class="text-xs text-gray-500">Updated <%= new Date(msg.createdAt).toLocaleDateString() %></div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <!-- 4. Badges with distinct colors -->
+                                    <% 
+                                        let badgeColor = 'bg-gray-100 text-gray-800'; 
+                                        if (msg.type === 'PaymentConfirmation') badgeColor = 'bg-green-100 text-green-800 border-green-200';
+                                        if (msg.type === 'DueReminder') badgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                                        if (msg.type === 'WeeklyReminder') badgeColor = 'bg-blue-100 text-blue-800 border-blue-200';
+                                        if (msg.type === 'Custom') badgeColor = 'bg-purple-100 text-purple-800 border-purple-200';
+                                    %>
+                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border <%= badgeColor %> shadow-sm">
+                                        <%= msg.type %>
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-500 max-w-xs truncate cursor-pointer" onclick="openPreviewModal('<%= msg._id %>')" title="Click to preview">
+                                        <%= msg.text.substring(0, 40) %><%= msg.text.length > 40 ? '...' : '' %>
+                                    </div>
+                                    <textarea id="hidden-text-<%= msg._id %>" class="hidden"><%= msg.text %></textarea>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <!-- 5. Action Buttons (Icon buttons, rounded, small size, hover effects) -->
+                                    <div class="flex items-center justify-end space-x-3">
+                                        <button onclick="openPreviewModal('<%= msg._id %>')" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300" title="Preview">
+                                            <i class="fas fa-eye text-xs"></i>
+                                        </button>
+                                        <a href="/admin/messages/<%= msg._id %>/edit" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-300" title="Edit">
+                                            <i class="fas fa-pencil-alt text-xs"></i>
+                                        </a>
+                                        <form action="/admin/messages/<%= msg._id %>/delete" method="POST" class="inline" id="deleteForm-<%= msg._id %>">
+                                            <button type="button" onclick="openDeleteTemplateModal(document.getElementById('deleteForm-<%= msg._id %>'), '<%= msg.name %>');" class="w-8 h-8 rounded-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-800 flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-300" title="Delete">
+                                                <i class="fas fa-trash-alt text-xs"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <!-- 7. Empty State Design -->
+                        <tr id="emptyStateRow">
+                            <td colspan="4" class="px-6 py-16 text-center">
+                                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 border-dashed">
+                                    <i class="fas fa-inbox text-3xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-1">No templates yet</h3>
+                                <p class="text-sm text-gray-500 mb-6 max-w-xs mx-auto">Create your first WhatsApp template to automate notifications and save time.</p>
+                                <a href="/admin/messages/add" class="inline-flex items-center px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg hover:bg-indigo-100 transition-colors">
+                                    <i class="fas fa-plus mr-2"></i> Create Template
+                                </a>
+                            </td>
+                        </tr>
+                    <% } %>
+                    <!-- Client-side No Results State -->
+                     <tr id="noResultsRow" class="hidden">
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-500 text-sm">
+                            No templates match your search.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- 9. WhatsApp Style Preview Modal -->
+<div id="previewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div class="relative w-full max-w-sm mx-4 transform scale-95 transition-transform duration-300 shadow-2xl rounded-2xl" id="previewModalContent">
+        
+        <!-- Modal Header -->
+        <div class="bg-gray-100 rounded-t-2xl flex items-center justify-between p-3 border-b border-gray-200 pl-4">
+            <div class="flex items-center space-x-3">
+                <i class="fab fa-whatsapp text-green-500 text-xl"></i>
+                <h3 class="font-semibold text-gray-800 text-sm">Message Preview</h3>
+            </div>
+            <button onclick="closePreviewModal()" class="w-8 h-8 rounded-full hover:bg-gray-200 text-gray-500 flex items-center justify-center transition-colors focus:outline-none">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- WhatsApp Chat Background -->
+        <div class="bg-[#E5DDD5] p-5 rounded-b-2xl max-h-[70vh] overflow-y-auto whatsapp-bg">
+            <!-- Simulated Message Bubble -->
+            <div class="bg-white rounded-lg rounded-tl-none p-2 shadow-sm max-w-[85%] relative text-[#111B21] text-[14.2px] leading-[19px] break-words whatsapp-bubble">
+                <div id="previewMediaContainer" class="hidden mb-2">
+                    <img id="previewMediaImg" src="" alt="Media" class="w-full h-auto max-h-48 object-cover rounded shadow-sm">
+                </div>
+                <div id="previewTextContent" class="whitespace-pre-wrap font-[Helvetica,Arial,sans-serif] pb-3"></div>
+                <!-- WhatsApp Timestamp -->
+                <div class="absolute bottom-1 right-2 text-[#687782] text-[10px] flex items-center">
+                    <span id="previewTime">12:00 PM</span>
+                    <i class="fas fa-check-double text-blue-400 ml-1 ml-0.5" style="font-size: 10px;"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    /* WhatsApp Background Pattern (Subtle dots/shapes simulation) */
+    .whatsapp-bg {
+        background-color: #efeae2;
+        background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M0 0h20v20H0V0zm10 10l10-10H0l10 10z" fill="rgba(0,0,0,0.02)" fill-rule="evenodd"/%3E%3C/svg%3E');
+    }
+    .whatsapp-bubble::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -8px;
+        width: 0;
+        height: 0;
+        border-right: 8px solid white;
+        border-bottom: 8px solid transparent;
+        z-index: 10;
+    }
+</style>
+
+<!-- Improved Delete Modal via JS Override -->
+<script>
+    let templateFormToDelete = null;
+
+    function openDeleteTemplateModal(form, name) {
+        templateFormToDelete = form;
+        // Re-use existing adminLayout delete modal but inject dynamic text if possible
+        const descEl = document.querySelector('#delete-modal-content p');
+        if(descEl) descEl.textContent = `Are you sure you want to delete the "${name}" template? This action cannot be undone.`;
+        openDeleteModal(form);
+    }
+
+    // Modal Logic
+    const modals = {
+        preview: document.getElementById('previewModal'),
+        previewContent: document.getElementById('previewModalContent')
+    };
+
+    function openPreviewModal(id) {
+        // Fetch data from DOM
+        const textSrc = document.getElementById('hidden-text-' + id).value;
+        // Optionally fetch image if exists in the row
+        const row = document.querySelector(`textarea#hidden-text-${id}`).closest('tr');
+        const imgEl = row.querySelector('img');
+
+        // Populate Modal
+        document.getElementById('previewTextContent').textContent = textSrc.replace(/{{name}}/g, 'Ali')
+                                                                           .replace(/{{amount}}/g, '5000')
+                                                                           .replace(/{{dueDate}}/g, new Date().toLocaleDateString());
+        
+        const mediaContainer = document.getElementById('previewMediaContainer');
+        const mediaImg = document.getElementById('previewMediaImg');
+        
+        if (imgEl && imgEl.src) {
+            mediaImg.src = imgEl.src;
+            mediaContainer.classList.remove('hidden');
+        } else {
+            mediaContainer.classList.add('hidden');
+        }
+
+        const now = new Date();
+        document.getElementById('previewTime').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        modals.preview.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modals.preview.classList.remove('opacity-0');
+            modals.previewContent.classList.remove('scale-95');
+            modals.previewContent.classList.add('scale-100');
+        });
+    }
+
+    function closePreviewModal() {
+        modals.preview.classList.add('opacity-0');
+        modals.previewContent.classList.remove('scale-100');
+        modals.previewContent.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modals.preview.classList.add('hidden');
+        }, 300);
+    }
+
+    // Close preview on backdrop click
+    modals.preview.addEventListener('click', (e) => {
+        if (e.target === modals.preview) {
+            closePreviewModal();
+        }
+    });
+
+    // Client-side Search and Filter
+    const searchInput = document.getElementById('searchInput');
+    const filterType = document.getElementById('filterType');
+    const rows = document.querySelectorAll('.template-row');
+    const noResultsRow = document.getElementById('noResultsRow');
+
+    function filterTemplates() {
+        const query = searchInput.value.toLowerCase();
+        const type = filterType.value;
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const rType = row.getAttribute('data-type');
+            const rName = row.getAttribute('data-name');
+            
+            const matchesQuery = rName.includes(query);
+            const matchesType = type === 'All' || rType === type;
+
+            if (matchesQuery && matchesType) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (visibleCount === 0 && rows.length > 0) {
+            noResultsRow.classList.remove('hidden');
+        } else {
+            noResultsRow.classList.add('hidden');
+        }
+    }
+
+    if(searchInput && filterType) {
+        searchInput.addEventListener('input', filterTemplates);
+        filterType.addEventListener('change', filterTemplates);
+    }
+</script>

@@ -1,0 +1,159 @@
+<div class="container-fluid py-8 px-4 sm:px-6 md:px-8 max-w-5xl mx-auto min-h-screen flex flex-col items-center justify-start pt-12">
+
+    <!-- Page Title + Subtitle -->
+    <div class="mb-10 text-center w-full">
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">WhatsApp Settings</h1>
+        <p class="mt-2 text-sm text-gray-500 font-medium">Link your business number to automate messages.</p>
+    </div>
+
+    <!-- Toggle Status Card -->
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6 flex items-center justify-between p-6">
+        <div>
+            <h3 class="text-sm font-bold text-gray-800">Global Messaging Hook</h3>
+            <p class="text-xs text-gray-500 mt-1">When disabled, no messages will be sent even if connected.</p>
+        </div>
+        <form action="/admin/whatsapp/toggle-whatsapp" method="POST" class="m-0">
+            <% if(whatsappStatus.enabled) { %>
+                <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm">
+                    <i class="fas fa-toggle-on mr-2 text-lg"></i> Sending is ON
+                </button>
+            <% } else { %>
+                <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-600 text-sm font-semibold rounded-xl transition-all shadow-sm">
+                    <i class="fas fa-toggle-off mr-2 text-lg"></i> Sending is OFF
+                </button>
+            <% } %>
+        </form>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden relative">
+        <div class="h-2 w-full bg-gradient-to-r from-teal-400 to-emerald-500"></div>
+        
+        <div class="p-8 sm:p-12 text-center" id="ui-container">
+            <!-- Loading State -->
+            <div id="state-loading" class="flex flex-col items-center justify-center py-10">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-teal-500 mb-6"></i>
+                <h3 class="text-xl font-bold text-gray-800">Connecting to WhatsApp...</h3>
+                <p class="text-gray-500 text-sm mt-3">Booting up the engine and checking session state.</p>
+            </div>
+
+            <!-- Connected State -->
+            <div id="state-connected" class="hidden flex-col items-center justify-center py-6">
+                <div class="w-24 h-24 mb-6 rounded-full bg-green-50 border-4 border-green-100 flex items-center justify-center relative">
+                    <i class="fab fa-whatsapp text-5xl text-green-500"></i>
+                    <div class="absolute bottom-1 right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                        <i class="fas fa-check text-white text-[10px]"></i>
+                    </div>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-gray-900 mb-1">WhatsApp Connected</h2>
+                <div class="px-4 py-1.5 bg-gray-100 rounded-full text-gray-700 font-mono text-sm tracking-widest mt-2 border border-gray-200" id="connected-number">
+                    Loading...
+                </div>
+
+                <div class="mt-4 text-xs text-gray-400 font-medium my-8" id="connected-time">
+                    Session Active
+                </div>
+
+                <form action="/admin/whatsapp/disconnect" method="POST" class="mt-2 w-full">
+                    <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-white border-2 border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200 font-bold rounded-xl transition-all shadow-sm">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Disconnect Account
+                    </button>
+                </form>
+            </div>
+
+            <!-- QR State -->
+            <div id="state-qr" class="hidden flex-col items-center justify-center py-4">
+                <div class="w-16 h-16 mb-4 rounded-full bg-blue-50 flex items-center justify-center shadow-inner">
+                    <i class="fas fa-qrcode text-3xl text-blue-500"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Link your Device</h2>
+                <p class="text-gray-500 text-sm mt-2 mb-8 max-w-sm mx-auto">Open WhatsApp on your phone, tap Menu or Settings and select <strong>Linked Devices</strong>. Scan the QR code below.</p>
+                
+                <div class="bg-white p-4 rounded-3xl shadow-sm border-2 border-gray-100 mb-8 inline-block relative group">
+                    <img id="qr-image" src="" alt="WhatsApp QR Code" class="w-64 h-64 object-contain rounded-xl opacity-0 transition-opacity duration-500" onload="this.classList.remove('opacity-0')">
+                    
+                    <div class="absolute inset-0 bg-white/80 rounded-3xl flex-col items-center justify-center hidden" id="qr-overlay">
+                        <i class="fas fa-sync fa-spin text-3xl text-gray-400 mb-3"></i>
+                        <p class="text-sm font-semibold text-gray-600">Generating code...</p>
+                    </div>
+                </div>
+
+                <form action="/admin/whatsapp/refresh" method="POST" class="w-full">
+                    <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-gray-50 text-gray-600 hover:bg-gray-100 font-medium rounded-xl transition-all border border-gray-200">
+                        <i class="fas fa-redo-alt mr-2"></i> Refresh QR Code
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const elLoading = document.getElementById('state-loading');
+    const elConnected = document.getElementById('state-connected');
+    const elQr = document.getElementById('state-qr');
+    const qrImage = document.getElementById('qr-image');
+    const qrOverlay = document.getElementById('qr-overlay');
+    const txtNumber = document.getElementById('connected-number');
+    const txtTime = document.getElementById('connected-time');
+
+    let currentQrHash = '';
+
+    const checkStatus = async () => {
+        try {
+            const req = await fetch('/admin/whatsapp/status');
+            const data = await req.json();
+
+            if (data.isReady) {
+                // Connected UI
+                elLoading.classList.add('hidden');
+                elQr.classList.add('hidden');
+                elConnected.classList.remove('hidden');
+                elConnected.classList.add('flex');
+                
+                txtNumber.textContent = '+' + data.phoneNumber;
+                if (data.lastConnected) {
+                    txtTime.textContent = 'Last connected: ' + new Date(data.lastConnected).toLocaleString();
+                }
+
+            } else if (data.qr) {
+                // QR UI
+                elLoading.classList.add('hidden');
+                elConnected.classList.add('hidden');
+                elConnected.classList.remove('flex');
+                elQr.classList.remove('hidden');
+                elQr.classList.add('flex');
+
+                // Only update image if QR actually changed to prevent visual flickering
+                if (currentQrHash !== data.qr) {
+                    currentQrHash = data.qr;
+                    qrOverlay.classList.remove('hidden');
+                    qrOverlay.classList.add('flex');
+                    
+                    // Encode via generic fast API
+                    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(data.qr)}`;
+                    qrImage.onload = () => {
+                        qrOverlay.classList.add('hidden');
+                        qrOverlay.classList.remove('flex');
+                        qrImage.classList.remove('opacity-0');
+                    };
+                }
+            } else {
+                // Loading or Destroyed UI
+                elConnected.classList.add('hidden');
+                elConnected.classList.remove('flex');
+                elQr.classList.add('hidden');
+                elQr.classList.remove('flex');
+                elLoading.classList.remove('hidden');
+            }
+
+        } catch (e) {
+            console.error('Polling error', e);
+        }
+    };
+
+    // Poll aggressively for rapid native UI feel
+    checkStatus();
+    setInterval(checkStatus, 3000);
+</script>

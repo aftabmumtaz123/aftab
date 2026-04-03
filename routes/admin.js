@@ -9,7 +9,8 @@ const Testimonial = require('../models/Testimonial');
 const HeroSection = require('../models/HeroSection');
 const Education = require('../models/Education');
 const upload = require('../middleware/uploadMiddleware');
-const { requireAuth } = require('../middleware/authMiddleware');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
+const User = require('../models/User');
 const adminHelpers = require('../utils/adminHelpers');
 const Contact = require('../models/Contact'); // Import Contact model
 const Notification = require('../models/Notification');
@@ -20,7 +21,8 @@ router.use(requireAuth);
 // --- Notifications ---
 router.get('/notifications', async (req, res) => {
     try {
-        const notifications = await Notification.find().sort({ date: -1 }).limit(20);
+        const ownerId = req.user._id;
+        const notifications = await Notification.find({ owner: ownerId }).sort({ date: -1 }).limit(20);
         res.json(notifications);
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -29,7 +31,8 @@ router.get('/notifications', async (req, res) => {
 
 router.post('/notifications/mark-read', async (req, res) => {
     try {
-        await Notification.updateMany({ read: false }, { read: true });
+        const ownerId = req.user._id;
+        await Notification.updateMany({ owner: ownerId, read: false }, { read: true });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Failed to mark notifications as read' });
@@ -39,9 +42,10 @@ router.post('/notifications/mark-read', async (req, res) => {
 router.post('/notifications/subscribe', async (req, res) => {
     try {
         const subscription = req.body;
+        const ownerId = req.user._id;
         const redisClient = require('../config/redis');
         if (redisClient && redisClient.isReady) {
-            await redisClient.sAdd('push_subscriptions', JSON.stringify(subscription));
+            await redisClient.sAdd(`push_subscriptions:${ownerId}`, JSON.stringify(subscription));
         }
         res.status(201).json({ success: true });
     } catch (err) {
@@ -64,6 +68,68 @@ router.use((req, res, next) => {
 const renderAdmin = (res, view, data) => {
     res.render(view, { layout: 'layouts/adminLayout', ...data });
 };
+
+// ======= USER MANAGEMENT (Admin Only) =======
+router.get('/users', requireAdmin, async (req, res) => {
+    const users = await User.find().sort({ createdAt: -1 });
+    renderAdmin(res, 'admin/users', { title: 'Users', path: '/users', users });
+});
+
+router.get('/users/add', requireAdmin, (req, res) => {
+    renderAdmin(res, 'admin/add-user', { title: 'Add User', path: '/users' });
+});
+
+router.post('/users/add', requireAdmin, async (req, res) => {
+    try {
+        const { username, password, email, phone, role } = req.body;
+        const existing = await User.findOne({ username });
+        if (existing) {
+            return res.redirect('/admin/users/add?error=Username+already+exists');
+        }
+        await User.create({ username, password, email: email || '', phone: phone || '', role: role || 'user' });
+        res.redirect('/admin/users');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/admin/users/add?error=Failed+to+create+user');
+    }
+});
+
+router.post('/users/:id/toggle', requireAdmin, async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (user && user.role !== 'admin') {
+        user.isActive = !user.isActive;
+        await user.save();
+    }
+    res.redirect('/admin/users');
+});
+
+router.post('/users/:id/delete', requireAdmin, async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (user && user.role !== 'admin') {
+        // Delete all user's data
+        const Payment = require('../models/Payment');
+        const Wallet = require('../models/Wallet');
+        const Person = require('../models/Person');
+        const Income = require('../models/Income');
+        const Expense = require('../models/Expense');
+        const Transfer = require('../models/Transfer');
+        const Category = require('../models/Category');
+        const Goal = require('../models/Goal');
+        
+        await Promise.all([
+            Payment.deleteMany({ owner: user._id }),
+            Wallet.deleteMany({ owner: user._id }),
+            Person.deleteMany({ owner: user._id }),
+            Income.deleteMany({ owner: user._id }),
+            Expense.deleteMany({ owner: user._id }),
+            Transfer.deleteMany({ owner: user._id }),
+            Category.deleteMany({ owner: user._id }),
+            Goal.deleteMany({ owner: user._id })
+        ]);
+        await User.findByIdAndDelete(user._id);
+    }
+    res.redirect('/admin/users');
+});
 
 // Dashboard
 router.get('/dashboard', async (req, res) => {
@@ -547,6 +613,189 @@ router.post('/education/:id/delete', async (req, res) => {
         res.redirect('/admin/education');
     } catch (err) {
         res.status(500).send('Error deleting education');
+    }
+});
+
+// ===== MESSAGE TEMPLATES ROUTES =====
+const MessageTemplate = require('../models/MessageTemplate');
+
+// List Message Templates
+router.get('/messages', async (req, res) => {
+    try {
+        const ownerId = req.user._id;
+        const messages = await MessageTemplate.find({ owner: ownerId }).sort({ createdAt: -1 });
+        
+        // Calculate Stats
+        const stats = {
+            total: messages.length,
+            active: messages.length,
+            lastUpdated: messages.length > 0 ? messages[0].createdAt : new Date()
+        };
+
+        renderAdmin(res, 'admin/messages', {
+            title: 'Message Templates',
+            path: '/messages',
+            messages,
+            stats
+        });
+    } catch (err) {
+        res.status(500).send('Error loading messages');
+    }
+});
+
+// Add Message Template Form
+router.get('/messages/add', (req, res) => {
+    renderAdmin(res, 'admin/add-message', {
+        title: 'Add Message Template',
+        path: '/messages',
+        types: ['PaymentConfirmation', 'DueReminder', 'WeeklyReminder', 'Custom']
+    });
+});
+
+// Create Message Template
+router.post('/messages', upload.single('media'), async (req, res) => {
+    try {
+        const messageData = {
+            name: req.body.name,
+            type: req.body.type,
+            text: req.body.text,
+            owner: req.user._id
+        };
+        // Use Cloudinary uploaded URL if image attached
+        if (req.file) messageData.mediaUrl = req.file.path;
+        
+        await MessageTemplate.create(messageData);
+        res.redirect('/admin/messages');
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).send('A message template with this system type already exists.');
+        }
+        res.status(500).send('Error adding message template');
+    }
+});
+
+// ======= WHATSAPP SETTINGS =======
+
+router.get('/whatsapp', (req, res) => {
+    renderAdmin(res, 'admin/whatsapp', {
+        title: 'WhatsApp Settings',
+        path: '/whatsapp'
+    });
+});
+
+router.get('/whatsapp/status', (req, res) => {
+    const whatsappService = require('../utils/whatsappService');
+    res.json({
+        isReady: whatsappService.whatsappStatus.isReady,
+        qr: whatsappService.whatsappStatus.qr,
+        enabled: whatsappService.whatsappStatus.enabled,
+        phoneNumber: whatsappService.whatsappStatus.phoneNumber,
+        lastConnected: whatsappService.whatsappStatus.lastConnected
+    });
+});
+
+router.post('/whatsapp/disconnect', async (req, res) => {
+    const whatsappService = require('../utils/whatsappService');
+    await whatsappService.disconnect();
+    res.redirect('/admin/whatsapp');
+});
+
+router.post('/whatsapp/refresh', async (req, res) => {
+    const whatsappService = require('../utils/whatsappService');
+    await whatsappService.reconnect();
+    res.redirect('/admin/whatsapp');
+});
+
+router.post('/whatsapp/toggle-whatsapp', (req, res) => {
+    const whatsappService = require('../utils/whatsappService');
+    whatsappService.whatsappStatus.enabled = !whatsappService.whatsappStatus.enabled;
+    res.redirect('/admin/whatsapp');
+});
+
+router.get('/whatsapp/logs', async (req, res) => {
+    const MessageLog = require('../models/MessageLog');
+    const ownerId = req.user._id;
+    const logs = await MessageLog.find({ owner: ownerId }).populate('person').sort({ createdAt: -1 }).limit(200);
+    const totalSent = await MessageLog.countDocuments({ owner: ownerId, status: 'Sent' });
+    const totalFailed = await MessageLog.countDocuments({ owner: ownerId, status: 'Failed' });
+    
+    renderAdmin(res, 'admin/message-logs', {
+        title: 'Message Logs',
+        path: '/whatsapp/logs',
+        logs,
+        stats: { totalSent, totalFailed }
+    });
+});
+
+router.post('/whatsapp/bulk', async (req, res) => {
+    const { messageText } = req.body;
+    if(!messageText) return res.redirect('/admin/whatsapp/logs');
+
+    const whatsappService = require('../utils/whatsappService');
+    const Person = require('../models/Person');
+    const ownerId = req.user._id;
+    
+    // Redirect instantly while background blast executes
+    res.redirect('/admin/whatsapp/logs');
+    
+    const people = await Person.find({ owner: ownerId, phone: { $exists: true, $type: "string", $ne: "" } });
+    console.log(`🚀 Starting Bulk Announcement to ${people.length} contacts...`);
+    
+    for (const p of people) {
+        if (p.phone && p.phone.trim() !== "") {
+            const safeText = messageText.replace(/{{name}}/g, p.name);
+            await whatsappService.sendCustomMessage(p.phone, safeText, ownerId, p._id);
+            // Delay 1 second to avoid rate limiting
+            await new Promise(r => setTimeout(r, 1000));
+        }
+    }
+    console.log('✅ Bulk Announcement Blast Finished');
+});
+
+// ======= MESSAGE TEMPLATES =======
+
+// Edit Message Template Form
+router.get('/messages/:id/edit', async (req, res) => {
+    try {
+        const message = await MessageTemplate.findOne({ _id: req.params.id, owner: req.user._id });
+        renderAdmin(res, 'admin/edit-message', {
+            title: 'Edit Message Template',
+            path: '/messages',
+            msg: message,
+            types: ['PaymentConfirmation', 'DueReminder', 'WeeklyReminder', 'Custom']
+        });
+    } catch (err) {
+        res.status(500).send('Error loading message template');
+    }
+});
+
+// Update Message Template
+router.post('/messages/:id/edit', upload.single('media'), async (req, res) => {
+    try {
+        const messageData = {
+            name: req.body.name,
+            type: req.body.type,
+            text: req.body.text
+        };
+        if (req.file) messageData.mediaUrl = req.file.path;
+
+        await MessageTemplate.findOneAndUpdate({ _id: req.params.id, owner: req.user._id }, messageData);
+        res.redirect('/admin/messages');
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).send('A message template with this system type already exists.');
+        }
+        res.status(500).send('Error updating message template');
+    }
+});
+
+// Delete Message Template
+router.post('/messages/:id/delete', async (req, res) => {
+    try {
+        await MessageTemplate.findOneAndDelete({ _id: req.params.id, owner: req.user._id });
+        res.redirect('/admin/messages');
+    } catch (err) {
+        res.status(500).send('Error deleting message template');
     }
 });
 

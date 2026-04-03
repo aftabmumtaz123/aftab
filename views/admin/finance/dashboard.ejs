@@ -52,6 +52,89 @@
         </div>
     </div>
 
+    <!-- WhatsApp Stats Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100 flex items-center group hover:-translate-y-1 transition-all duration-300">
+            <div class="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 mr-4">
+                <i class="fab fa-whatsapp text-2xl"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Messages Sent</p>
+                <h3 class="text-2xl font-bold text-green-600"><%= totalMessagesSent %></h3>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100 flex items-center group hover:-translate-y-1 transition-all duration-300">
+            <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-500 mr-4">
+                <i class="fas fa-exclamation-circle text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Delivery Failures</p>
+                <h3 class="text-2xl font-bold text-red-600"><%= totalMessagesFailed %></h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Payments Details -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Pending to Receive -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 bg-blue-50/50 flex justify-between items-center">
+                <h3 class="font-bold text-blue-800 text-sm"><i class="fas fa-arrow-down mr-2"></i>Pending to Receive</h3>
+                <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full"><%= pendingReceiveList.length %></span>
+            </div>
+            <div class="divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                <% if (pendingReceiveList.length > 0) { %>
+                    <% pendingReceiveList.forEach(p => { %>
+                        <div class="px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm"><%= p.person ? p.person.name : 'Unknown' %></p>
+                                <p class="text-xs text-gray-400">Due: <%= p.endDate ? new Date(p.endDate).toLocaleDateString() : 'N/A' %></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-blue-600 text-sm">Rs <%= (p.amount - p.paidAmount).toLocaleString() %></p>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded font-medium
+                                    <%= p.status === 'Overdue' ? 'bg-red-100 text-red-600' : p.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600' %>">
+                                    <%= p.status %>
+                                </span>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="px-4 py-8 text-center text-gray-400 text-sm">No pending receivables</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Pending to Pay -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+            <div class="p-4 border-b border-gray-100 bg-orange-50/50 flex justify-between items-center">
+                <h3 class="font-bold text-orange-800 text-sm"><i class="fas fa-arrow-up mr-2"></i>Pending to Pay</h3>
+                <span class="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full"><%= pendingPayList.length %></span>
+            </div>
+            <div class="divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                <% if (pendingPayList.length > 0) { %>
+                    <% pendingPayList.forEach(p => { %>
+                        <div class="px-4 py-3 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm"><%= p.person ? p.person.name : 'Unknown' %></p>
+                                <p class="text-xs text-gray-400">Due: <%= p.endDate ? new Date(p.endDate).toLocaleDateString() : 'N/A' %></p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-orange-600 text-sm">Rs <%= (p.amount - p.paidAmount).toLocaleString() %></p>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded font-medium
+                                    <%= p.status === 'Overdue' ? 'bg-red-100 text-red-600' : p.status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600' %>">
+                                    <%= p.status %>
+                                </span>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="px-4 py-8 text-center text-gray-400 text-sm">No pending payables</div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
     <!-- Health Score & People Summary -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <!-- Financial Health Score -->

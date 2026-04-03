@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Person = require('../models/Person');
 const Expense = require('../models/Expense');
 const Payment = require('../models/Payment');
@@ -31,6 +32,7 @@ router.use((req, res, next) => {
 router.post('/sync', async (req, res) => {
     try {
         const { changes } = req.body;
+        const ownerId = req.user._id;
         if (!changes || !Array.isArray(changes)) {
             return res.status(400).json({ success: false, message: 'Invalid changes format' });
         }
@@ -39,30 +41,33 @@ router.post('/sync', async (req, res) => {
             const { url, method, body } = change;
             const cleanUrl = url.split('?')[0]; // Remove query params if any
             const id = cleanUrl.split('/').pop();
+            
+            // Inject owner into body for create/update
+            if (body) body.owner = ownerId;
 
             if (cleanUrl.includes('/expenses/add')) await financeHelpers.createExpense(body);
-            else if (cleanUrl.includes('/expenses/edit/')) await financeHelpers.updateExpense(id, body);
-            else if (cleanUrl.includes('/expenses/delete/')) await financeHelpers.deleteExpense(id);
+            else if (cleanUrl.includes('/expenses/edit/')) await financeHelpers.updateExpense(id, body, ownerId);
+            else if (cleanUrl.includes('/expenses/delete/')) await financeHelpers.deleteExpense(id, ownerId);
 
             else if (cleanUrl.includes('/income/add')) await financeHelpers.createIncome(body);
-            else if (cleanUrl.includes('/income/edit/')) await financeHelpers.updateIncome(id, body);
-            else if (cleanUrl.includes('/income/delete/')) await financeHelpers.deleteIncome(id);
+            else if (cleanUrl.includes('/income/edit/')) await financeHelpers.updateIncome(id, body, ownerId);
+            else if (cleanUrl.includes('/income/delete/')) await financeHelpers.deleteIncome(id, ownerId);
 
             else if (cleanUrl.includes('/wallets/add')) await financeHelpers.createWallet(body);
-            else if (cleanUrl.includes('/wallets/edit/')) await financeHelpers.updateWallet(id, body);
-            else if (cleanUrl.includes('/wallets/delete/')) await financeHelpers.deleteWallet(id);
-            else if (cleanUrl.includes('/wallets/transfer')) await financeHelpers.transferFunds(body);
+            else if (cleanUrl.includes('/wallets/edit/')) await financeHelpers.updateWallet(id, body, ownerId);
+            else if (cleanUrl.includes('/wallets/delete/')) await financeHelpers.deleteWallet(id, ownerId);
+            else if (cleanUrl.includes('/wallets/transfer')) await financeHelpers.transferFunds(body, ownerId);
 
             else if (cleanUrl.includes('/people/add')) await financeHelpers.createPerson(body);
-            else if (cleanUrl.includes('/people/edit/')) await financeHelpers.updatePerson(id, body);
+            else if (cleanUrl.includes('/people/edit/')) await financeHelpers.updatePerson(id, body, ownerId);
 
             else if (cleanUrl.includes('/categories/add')) await financeHelpers.createCategory(body);
-            else if (cleanUrl.includes('/categories/edit/')) await financeHelpers.updateCategory(id, body);
-            else if (cleanUrl.includes('/categories/delete/')) await financeHelpers.deleteCategory(id);
+            else if (cleanUrl.includes('/categories/edit/')) await financeHelpers.updateCategory(id, body, ownerId);
+            else if (cleanUrl.includes('/categories/delete/')) await financeHelpers.deleteCategory(id, ownerId);
 
             else if (cleanUrl.includes('/payments/add')) await financeHelpers.createPayment(body);
-            else if (cleanUrl.includes('/payments/edit/')) await financeHelpers.updatePayment(id, body);
-            else if (cleanUrl.includes('/payments/delete/')) await financeHelpers.deletePayment(id);
+            else if (cleanUrl.includes('/payments/edit/')) await financeHelpers.updatePayment(id, body, ownerId);
+            else if (cleanUrl.includes('/payments/delete/')) await financeHelpers.deletePayment(id, ownerId);
         }
 
         res.json({ success: true });
@@ -82,9 +87,11 @@ router.post('/sync', async (req, res) => {
 });
 
 // --- Helper Functions ---
-const getFinancialSummary = async () => {
+const getFinancialSummary = async (ownerId) => {
+    const ownerMatch = { $match: { owner: new mongoose.Types.ObjectId(ownerId) } };
     // 1. Total Expenses
     const expenses = await Expense.aggregate([
+        ownerMatch,
         {
             $group: {
                 _id: null,
@@ -99,12 +106,14 @@ const getFinancialSummary = async () => {
 
     // 2. Total Income
     const income = await Income.aggregate([
+        ownerMatch,
         { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
     const totalIncome = income.length > 0 ? income[0].total : 0;
 
     // 3. Payments (Sent/Received)
     const payments = await Payment.aggregate([
+        ownerMatch,
         {
             $group: {
                 _id: "$type",
@@ -134,6 +143,7 @@ const getFinancialSummary = async () => {
 
     // 4. Total Wallet Balance (Net Worth)
     const wallets = await Wallet.aggregate([
+        ownerMatch,
         { $group: { _id: null, total: { $sum: "$balance" } } }
     ]);
     const totalWalletBalance = wallets.length > 0 ? wallets[0].total : 0;
@@ -153,13 +163,14 @@ const getFinancialSummary = async () => {
     };
 };
 
-const getChartData = async () => {
+const getChartData = async (ownerId) => {
+    const ownerMatch = { owner: new mongoose.Types.ObjectId(ownerId) };
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     // Monthly Expense Trend
     const expenseTrend = await Expense.aggregate([
-        { $match: { date: { $gte: sixMonthsAgo } } },
+        { $match: { ...ownerMatch, date: { $gte: sixMonthsAgo } } },
         {
             $group: {
                 _id: {
@@ -174,7 +185,7 @@ const getChartData = async () => {
 
     // Monthly Income Trend
     const incomeTrend = await Income.aggregate([
-        { $match: { date: { $gte: sixMonthsAgo } } },
+        { $match: { ...ownerMatch, date: { $gte: sixMonthsAgo } } },
         {
             $group: {
                 _id: {
@@ -189,6 +200,7 @@ const getChartData = async () => {
 
     // Category Spending (All time for now, or last 30 days)
     const categorySpending = await Expense.aggregate([
+        { $match: ownerMatch },
         {
             $group: {
                 _id: "$category",
@@ -227,8 +239,10 @@ const getFinancialHealthScore = (summary) => {
     return Math.min(Math.max(score, 0), 100);
 };
 
-const getPeopleSummary = async () => {
+const getPeopleSummary = async (ownerId) => {
+    const ownerMatch = { $match: { owner: new mongoose.Types.ObjectId(ownerId) } };
     const people = await Person.aggregate([
+        ownerMatch,
         {
             $group: {
                 _id: "$type",
@@ -241,7 +255,7 @@ const getPeopleSummary = async () => {
     return { breakdown: people, total: totalPeople };
 };
 
-const getUpcomingPayments = async () => {
+const getUpcomingPayments = async (ownerId) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const thirtyDaysLater = new Date();
@@ -249,6 +263,7 @@ const getUpcomingPayments = async () => {
 
     // 1. Expenses Due
     const expenses = await Expense.find({
+        owner: ownerId,
         $or: [
             { endDate: { $gte: today, $lte: thirtyDaysLater } },
             { nextDueDate: { $gte: today, $lte: thirtyDaysLater } }
@@ -258,6 +273,7 @@ const getUpcomingPayments = async () => {
 
     // 2. Payments Due (Money I owe)
     const payments = await Payment.find({
+        owner: ownerId,
         type: 'send',
         endDate: { $gte: today, $lte: thirtyDaysLater },
         status: { $ne: 'Completed' }
@@ -292,12 +308,13 @@ const getUpcomingPayments = async () => {
 // --- Dashboard ---
 router.get('/', async (req, res) => {
     try {
-        const summary = await getFinancialSummary();
-        const wallets = await Wallet.find().sort({ name: 1 });
-        const chartData = await getChartData();
+        const ownerId = req.user._id;
+        const summary = await getFinancialSummary(ownerId);
+        const wallets = await Wallet.find({ owner: ownerId }).sort({ name: 1 });
+        const chartData = await getChartData(ownerId);
         const healthScore = getFinancialHealthScore(summary);
-        const peopleSummary = await getPeopleSummary();
-        const upcomingPayments = await getUpcomingPayments();
+        const peopleSummary = await getPeopleSummary(ownerId);
+        const upcomingPayments = await getUpcomingPayments(ownerId);
 
         // Filter Logic
         let filter = req.query.filter || 'all';
@@ -305,31 +322,23 @@ router.get('/', async (req, res) => {
 
         let recentActivity = [];
 
-        // Fetch recent activity based on filter
-        // Note: For a real app with pagination, we'd do this in DB. 
-        // Here we fetch a bit more and filter in memory for simplicity or do separate queries.
-        // Given the requirements, let's fetch recent 20 of each and combine, then filter.
-
         const limit = 20;
         let expenses = [], income = [], payments = [];
 
         if (filter === 'all' || filter === 'expense') {
-            let query = {};
+            let query = { owner: ownerId };
             if (search) query.title = { $regex: search, $options: 'i' };
             expenses = await Expense.find(query).sort({ date: -1 }).limit(limit).lean();
         }
 
         if (filter === 'all' || filter === 'income') {
-            let query = {};
+            let query = { owner: ownerId };
             if (search) query.source = { $regex: search, $options: 'i' };
             income = await Income.find(query).populate('category').populate('wallet').sort({ date: -1 }).limit(limit).lean();
         }
 
         if (filter === 'all' || filter === 'transfers' || filter === 'people') {
-            // For payments, search might be on person name, so we need populate first or aggregate
-            // Simple approach: fetch then filter if search exists
-            let pQuery = Payment.find().populate('person').sort({ date: -1 }).limit(limit).lean();
-            let pResults = await pQuery;
+            let pResults = await Payment.find({ owner: ownerId }).populate('person').sort({ date: -1 }).limit(limit).lean();
 
             if (search) {
                 pResults = pResults.filter(p =>
@@ -353,6 +362,24 @@ router.get('/', async (req, res) => {
         // Slice to show top 10-20
         recentActivity = recentActivity.slice(0, 20);
 
+        // WhatsApp Message Count
+        const MessageLog = require('../models/MessageLog');
+        const totalMessagesSent = await MessageLog.countDocuments({ owner: ownerId, status: 'Sent' });
+        const totalMessagesFailed = await MessageLog.countDocuments({ owner: ownerId, status: 'Failed' });
+
+        // Detailed Pending Payments (Receive & Pay)
+        const pendingReceiveList = await Payment.find({
+            owner: ownerId,
+            type: 'receive',
+            status: { $in: ['Pending', 'Partial', 'Overdue'] }
+        }).populate('person').sort({ endDate: 1 }).limit(10).lean();
+
+        const pendingPayList = await Payment.find({
+            owner: ownerId,
+            type: 'send',
+            status: { $in: ['Pending', 'Partial', 'Overdue'] }
+        }).populate('person').sort({ endDate: 1 }).limit(10).lean();
+
         res.render('admin/finance/dashboard', {
             title: 'Finance Dashboard',
             summary,
@@ -364,6 +391,10 @@ router.get('/', async (req, res) => {
             upcomingPayments,
             filter,
             search,
+            totalMessagesSent,
+            totalMessagesFailed,
+            pendingReceiveList,
+            pendingPayList,
             layout: 'layouts/adminLayout'
         });
     } catch (err) {
@@ -394,14 +425,21 @@ router.get('/people', async (req, res) => {
             return res.render('offline', { layout: false });
         }
 
+        const ownerId = req.user._id;
+        const ownerMatch = { $match: { owner: new mongoose.Types.ObjectId(ownerId) } };
+        
         // Optimized: Use aggregation to calculate balances and get last transaction
         const peopleWithBalances = await Person.aggregate([
+            ownerMatch,
             {
                 $lookup: {
                     from: 'payments',
                     localField: '_id',
                     foreignField: 'person',
-                    pipeline: [{ $sort: { date: -1 } }], // Sort payments by date desc
+                    pipeline: [
+                        { $match: { owner: new mongoose.Types.ObjectId(ownerId) } },
+                        { $sort: { date: -1 } }
+                    ],
                     as: 'payments'
                 }
             },
@@ -496,7 +534,8 @@ router.get('/people/add', (req, res) => {
 
 router.post('/people/add', async (req, res) => {
     try {
-        await financeHelpers.createPerson(req.body);
+        const data = { ...req.body, owner: req.user._id };
+        await financeHelpers.createPerson(data);
         res.redirect('/admin/finance/people');
     } catch (err) {
         console.error(err);
@@ -507,7 +546,8 @@ router.post('/people/add', async (req, res) => {
 router.get('/people/edit/:id', async (req, res) => {
     try {
         if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
-        const person = await Person.findById(req.params.id);
+        const person = await Person.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!person) return res.redirect('/admin/finance/people');
         res.render('admin/finance/people/form', { title: 'Edit Person', person, layout: 'layouts/adminLayout' });
     } catch (err) {
         console.error(err);
@@ -517,7 +557,7 @@ router.get('/people/edit/:id', async (req, res) => {
 
 router.post('/people/edit/:id', async (req, res) => {
     try {
-        await financeHelpers.updatePerson(req.params.id, req.body);
+        await financeHelpers.updatePerson(req.params.id, req.body, req.user._id);
         res.redirect('/admin/finance/people');
     } catch (err) {
         console.error(err);
@@ -527,7 +567,7 @@ router.post('/people/edit/:id', async (req, res) => {
 
 router.get('/people/delete/:id', async (req, res) => {
     try {
-        await financeHelpers.deletePerson(req.params.id);
+        await financeHelpers.deletePerson(req.params.id, req.user._id);
         res.redirect('/admin/finance/people');
     } catch (err) {
         console.error(err);
@@ -540,11 +580,11 @@ router.get('/people/delete/:id', async (req, res) => {
 router.get('/people/:id', async (req, res) => {
     try {
         if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
-        const person = await Person.findById(req.params.id);
+        const person = await Person.findOne({ _id: req.params.id, owner: req.user._id });
         if (!person) return res.redirect('/admin/finance/people');
 
         // Fetch all related payments
-        const payments = await Payment.find({ person: person._id }).populate('wallet').sort({ date: -1 }).lean();
+        const payments = await Payment.find({ person: person._id, owner: req.user._id }).populate('wallet').sort({ date: -1 }).lean();
 
         // Calculate totals
         let totalGiven = 0;
@@ -562,7 +602,7 @@ router.get('/people/:id', async (req, res) => {
         // Net Balance > 0: I owe them (Payable)
         // Net Balance < 0: They owe me (Receivable)
 
-        const wallets = await Wallet.find().sort({ name: 1 }).lean();
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 }).lean();
 
         res.render('admin/finance/people/view', {
             title: person.name,
@@ -593,7 +633,7 @@ router.get('/expenses', async (req, res) => {
             return res.render('offline', { layout: false });
         }
 
-        const expenses = await Expense.find().populate('wallet').populate('categoryId').sort({ date: -1 });
+        const expenses = await Expense.find({ owner: req.user._id }).populate('wallet').populate('categoryId').sort({ date: -1 });
 
         // --- Calculate Advanced Dashboard Metrics ---
         const now = new Date();
@@ -736,8 +776,8 @@ router.get('/expenses', async (req, res) => {
 
 router.get('/expenses/add', async (req, res) => {
     try {
-        const wallets = await Wallet.find().sort({ name: 1 });
-        const categories = await Category.find({ type: 'expense' }).sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
+        const categories = await Category.find({ owner: req.user._id, type: 'expense' }).sort({ name: 1 });
         res.render('admin/finance/expenses/form', {
             title: 'Add Expense',
             expense: {},
@@ -753,7 +793,8 @@ router.get('/expenses/add', async (req, res) => {
 
 router.post('/expenses/add', async (req, res) => {
     try {
-        await financeHelpers.createExpense(req.body);
+        const data = { ...req.body, owner: req.user._id };
+        await financeHelpers.createExpense(data);
         if (redisClient.isReady) await redisClient.del('finance:expenses');
         res.redirect('/admin/finance/expenses');
     } catch (err) {
@@ -765,9 +806,10 @@ router.post('/expenses/add', async (req, res) => {
 router.get('/expenses/edit/:id', async (req, res) => {
     try {
         if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
-        const expense = await Expense.findById(req.params.id);
-        const wallets = await Wallet.find().sort({ name: 1 });
-        const categories = await Category.find({ type: 'expense' }).sort({ name: 1 });
+        const expense = await Expense.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!expense) return res.redirect('/admin/finance/expenses');
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
+        const categories = await Category.find({ owner: req.user._id, type: 'expense' }).sort({ name: 1 });
         res.render('admin/finance/expenses/form', {
             title: 'Edit Expense',
             expense,
@@ -783,7 +825,7 @@ router.get('/expenses/edit/:id', async (req, res) => {
 
 router.post('/expenses/edit/:id', async (req, res) => {
     try {
-        await financeHelpers.updateExpense(req.params.id, req.body);
+        await financeHelpers.updateExpense(req.params.id, req.body, req.user._id);
         if (redisClient.isReady) await redisClient.del('finance:expenses');
         res.redirect('/admin/finance/expenses');
     } catch (err) {
@@ -794,7 +836,7 @@ router.post('/expenses/edit/:id', async (req, res) => {
 
 router.get('/expenses/delete/:id', async (req, res) => {
     try {
-        await financeHelpers.deleteExpense(req.params.id);
+        await financeHelpers.deleteExpense(req.params.id, req.user._id);
         if (redisClient.isReady) await redisClient.del('finance:expenses');
         res.redirect('/admin/finance/expenses');
     } catch (err) {
@@ -806,8 +848,9 @@ router.get('/expenses/delete/:id', async (req, res) => {
 // Expense Detail View
 router.get('/expenses/:id', async (req, res) => {
     try {
-        const expense = await Expense.findById(req.params.id).populate('wallet');
-        const wallets = await Wallet.find().sort({ name: 1 });
+        const expense = await Expense.findOne({ _id: req.params.id, owner: req.user._id }).populate('wallet');
+        if (!expense) return res.redirect('/admin/finance/expenses');
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
         if (!expense) return res.status(404).send('Expense not found');
 
         res.render('admin/finance/expenses/view', {
@@ -840,10 +883,8 @@ router.get('/income', async (req, res) => {
             return res.render('offline', { layout: false });
         }
 
-        // 1. Fetch Basic List (for the table/cards)
-        // We'll fetch all for now, or limit to recent 50 for performance if needed.
-        // The requirement implies a list, let's fetch recent 100.
-        const incomeList = await Income.find()
+        const ownerId = req.user._id;
+        const incomeList = await Income.find({ owner: ownerId })
             .populate('wallet')
             .populate('category')
             .sort({ date: -1 })
@@ -858,6 +899,7 @@ router.get('/income', async (req, res) => {
         const thisYearStart = new Date(now.getFullYear(), 0, 1);
 
         const incomeAgg = await Income.aggregate([
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId) } },
             {
                 $group: {
                     _id: null,
@@ -898,7 +940,7 @@ router.get('/income', async (req, res) => {
 
         // 3. Chart Data: Income Flow (This Year Monthly)
         const monthlyTrendAgg = await Income.aggregate([
-            { $match: { date: { $gte: thisYearStart } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: thisYearStart } } },
             {
                 $group: {
                     _id: { month: { $month: "$date" } },
@@ -917,7 +959,7 @@ router.get('/income', async (req, res) => {
         // Using 'source' field as per requirement "Freelance, Salary, Ami"
         // But 'source' is free text. Let's group by 'source' text.
         const sourceBreakdownAgg = await Income.aggregate([
-            { $match: { date: { $gte: thisYearStart } } }, // Breakdown for this year
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: thisYearStart } } }, // Breakdown for this year
             { $group: { _id: "$source", total: { $sum: "$amount" } } },
             { $sort: { total: -1 } },
             { $limit: 5 }
@@ -931,7 +973,7 @@ router.get('/income', async (req, res) => {
         // 5. Quick Insights
         // Highest Income Day
         const highestDayAgg = await Income.aggregate([
-            { $match: { date: { $gte: thisYearStart } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: thisYearStart } } },
             { $group: { _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } }, total: { $sum: "$amount" }, source: { $first: "$source" } } },
             { $sort: { total: -1 } },
             { $limit: 1 }
@@ -944,7 +986,7 @@ router.get('/income', async (req, res) => {
 
         // Top Source This Month
         const topSourceMonthAgg = await Income.aggregate([
-            { $match: { date: { $gte: thisMonthStart } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: thisMonthStart } } },
             { $group: { _id: "$source", total: { $sum: "$amount" } } },
             { $sort: { total: -1 } },
             { $limit: 1 }
@@ -955,8 +997,8 @@ router.get('/income', async (req, res) => {
         const isGreatDay = metrics.today > avgDailyIncome;
 
         // Wallets & Categories for Filters/Add Modal
-        const wallets = await Wallet.find().sort({ name: 1 });
-        const categories = await Category.find({ type: 'income' }).sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: ownerId }).sort({ name: 1 });
+        const categories = await Category.find({ owner: ownerId, type: 'income' }).sort({ name: 1 });
 
         res.render('admin/finance/income/list', {
             title: 'Income Sources',
@@ -992,8 +1034,8 @@ router.get('/income', async (req, res) => {
 
 router.get('/income/add', async (req, res) => {
     try {
-        const wallets = await Wallet.find().sort({ name: 1 });
-        const categories = await Category.find({ type: 'income' }).sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
+        const categories = await Category.find({ owner: req.user._id, type: 'income' }).sort({ name: 1 });
         res.render('admin/finance/income/form', {
             title: 'Add Income',
             income: {},
@@ -1009,7 +1051,8 @@ router.get('/income/add', async (req, res) => {
 
 router.post('/income/add', async (req, res) => {
     try {
-        await financeHelpers.createIncome(req.body);
+        const data = { ...req.body, owner: req.user._id };
+        await financeHelpers.createIncome(data);
         if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
     } catch (err) {
@@ -1020,9 +1063,10 @@ router.post('/income/add', async (req, res) => {
 
 router.get('/income/edit/:id', async (req, res) => {
     try {
-        const income = await Income.findById(req.params.id);
-        const wallets = await Wallet.find().sort({ name: 1 });
-        const categories = await Category.find({ type: 'income' }).sort({ name: 1 });
+        const income = await Income.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!income) return res.redirect('/admin/finance/income');
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
+        const categories = await Category.find({ owner: req.user._id, type: 'income' }).sort({ name: 1 });
         res.render('admin/finance/income/form', {
             title: 'Edit Income',
             income,
@@ -1038,7 +1082,7 @@ router.get('/income/edit/:id', async (req, res) => {
 
 router.post('/income/edit/:id', async (req, res) => {
     try {
-        await financeHelpers.updateIncome(req.params.id, req.body);
+        await financeHelpers.updateIncome(req.params.id, req.body, req.user._id);
         if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
     } catch (err) {
@@ -1049,7 +1093,7 @@ router.post('/income/edit/:id', async (req, res) => {
 
 router.get('/income/delete/:id', async (req, res) => {
     try {
-        await financeHelpers.deleteIncome(req.params.id);
+        await financeHelpers.deleteIncome(req.params.id, req.user._id);
         if (redisClient.isReady) await redisClient.del('finance:income');
         res.redirect('/admin/finance/income');
     } catch (err) {
@@ -1061,8 +1105,8 @@ router.get('/income/delete/:id', async (req, res) => {
 // Income Detail View
 router.get('/income/:id', async (req, res) => {
     try {
-        const income = await Income.findById(req.params.id).populate('wallet').populate('category');
-        if (!income) return res.status(404).send('Income not found');
+        const income = await Income.findOne({ _id: req.params.id, owner: req.user._id }).populate('wallet').populate('category');
+        if (!income) return res.redirect('/admin/finance/income');
 
         res.render('admin/finance/income/view', {
             title: income.source,
@@ -1078,20 +1122,20 @@ router.get('/income/:id', async (req, res) => {
 router.get('/reports', async (req, res) => {
     try {
         // --- Advanced Report Metrics ---
-        const now = new Date();
+        const ownerId = req.user._id;
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
         // 1. Summary Cards (This Month)
         const thisMonthIncome = await Income.aggregate([
-            { $match: { date: { $gte: startOfMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfMonth } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
         const totalIncome = thisMonthIncome.length ? thisMonthIncome[0].total : 0;
 
         const thisMonthExpense = await Expense.aggregate([
-            { $match: { date: { $gte: startOfMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfMonth } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
         const totalExpense = thisMonthExpense.length ? thisMonthExpense[0].total : 0;
@@ -1099,31 +1143,32 @@ router.get('/reports', async (req, res) => {
         const netSavings = totalIncome - totalExpense;
 
         // Wallet Balance
-        const wallets = await Wallet.aggregate([
+        const walletBalanceAgg = await Wallet.aggregate([
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId) } },
             { $group: { _id: null, total: { $sum: "$balance" } } }
         ]);
-        const walletBalance = wallets.length ? wallets[0].total : 0;
+        const walletBalance = walletBalanceAgg.length ? walletBalanceAgg[0].total : 0;
 
         // Trends (vs Last Month)
         const lastMonthIncome = await Income.aggregate([
-            { $match: { date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
         const lmIncome = lastMonthIncome.length ? lastMonthIncome[0].total : 0;
-        const incomeTrend = lmIncome === 0 ? 100 : Math.round(((totalIncome - lmIncome) / lmIncome) * 100);
+        const incomeTrend = lmIncome === 0 ? (totalIncome > 0 ? 100 : 0) : Math.round(((totalIncome - lmIncome) / lmIncome) * 100);
 
         const lastMonthExpenseAgg = await Expense.aggregate([
-            { $match: { date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
             { $group: { _id: null, total: { $sum: "$amount" } } }
         ]);
         const lmExpense = lastMonthExpenseAgg.length ? lastMonthExpenseAgg[0].total : 0;
-        const expenseTrend = lmExpense === 0 ? 100 : Math.round(((totalExpense - lmExpense) / lmExpense) * 100);
+        const expenseTrend = lmExpense === 0 ? (totalExpense > 0 ? 100 : 0) : Math.round(((totalExpense - lmExpense) / lmExpense) * 100);
 
         // 2. Charts Data
         // Income vs Expense (Last 12 Months)
         const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
         const monthlyStats = await Expense.aggregate([
-            { $match: { date: { $gte: twelveMonthsAgo } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: twelveMonthsAgo } } },
             {
                 $group: {
                     _id: { year: { $year: "$date" }, month: { $month: "$date" } },
@@ -1134,7 +1179,7 @@ router.get('/reports', async (req, res) => {
         ]);
 
         const monthlyIncomeStats = await Income.aggregate([
-            { $match: { date: { $gte: twelveMonthsAgo } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: twelveMonthsAgo } } },
             {
                 $group: {
                     _id: { year: { $year: "$date" }, month: { $month: "$date" } },
@@ -1166,20 +1211,20 @@ router.get('/reports', async (req, res) => {
 
         // Category Breakdown (This Month)
         const categoryBreakdown = await Expense.aggregate([
-            { $match: { date: { $gte: startOfMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfMonth } } },
             { $group: { _id: "$category", total: { $sum: "$amount" } } },
             { $sort: { total: -1 } }
         ]);
 
         // Top 5 Expenses (This Month)
-        const topExpenses = await Expense.find({ date: { $gte: startOfMonth } })
+        const topExpenses = await Expense.find({ owner: ownerId, date: { $gte: startOfMonth } })
             .sort({ amount: -1 })
             .limit(5)
             .lean();
 
         // Wallet Breakdown (This Month)
         const walletBreakdown = await Expense.aggregate([
-            { $match: { date: { $gte: startOfMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfMonth } } },
             { $group: { _id: "$wallet", total: { $sum: "$amount" } } }
         ]);
         await Wallet.populate(walletBreakdown, { path: "_id", select: "name" });
@@ -1190,7 +1235,7 @@ router.get('/reports', async (req, res) => {
         // Quick Insights
         // Highest Expense Day
         const dailyExpenses = await Expense.aggregate([
-            { $match: { date: { $gte: startOfMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfMonth } } },
             { $group: { _id: { $dayOfMonth: "$date" }, total: { $sum: "$amount" } } },
             { $sort: { total: -1 } },
             { $limit: 1 }
@@ -1242,11 +1287,12 @@ router.get('/reports', async (req, res) => {
 
 router.get('/reports/export/pdf', async (req, res) => {
     try {
-        const summary = await getFinancialSummary();
-        const income = await Income.find().populate('category').sort({ date: -1 });
-        const expenses = await Expense.find().populate('categoryId').sort({ date: -1 });
-        const upcomingPayments = await getUpcomingPayments();
-        const wallets = await Wallet.find();
+        const ownerId = req.user._id;
+        const summary = await getFinancialSummary(ownerId);
+        const income = await Income.find({ owner: ownerId }).populate('category').sort({ date: -1 });
+        const expenses = await Expense.find({ owner: ownerId }).populate('categoryId').sort({ date: -1 });
+        const upcomingPayments = await getUpcomingPayments(ownerId);
+        const wallets = await Wallet.find({ owner: ownerId });
 
         const html = await ejs.renderFile(path.join(__dirname, '../views/admin/finance/reports/pdf-template.ejs'), {
             summary,
@@ -1281,13 +1327,14 @@ router.get('/reports/export/pdf', async (req, res) => {
 
 router.get('/reports/export/excel', async (req, res) => {
     try {
+        const ownerId = req.user._id;
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'Aftab Dev';
         workbook.created = new Date();
 
         // 1. Summary Sheet
         const summarySheet = workbook.addWorksheet('Summary');
-        const summary = await getFinancialSummary();
+        const summary = await getFinancialSummary(ownerId);
 
         summarySheet.columns = [
             { header: 'Metric', key: 'metric', width: 30 },
@@ -1309,7 +1356,7 @@ router.get('/reports/export/excel', async (req, res) => {
 
         // 2. Income Sheet
         const incomeSheet = workbook.addWorksheet('Income');
-        const income = await Income.find().populate('category').sort({ date: -1 });
+        const income = await Income.find({ owner: ownerId }).populate('category').sort({ date: -1 });
 
         incomeSheet.columns = [
             { header: 'Date', key: 'date', width: 15 },
@@ -1332,7 +1379,7 @@ router.get('/reports/export/excel', async (req, res) => {
 
         // 3. Expenses Sheet
         const expenseSheet = workbook.addWorksheet('Expenses');
-        const expenses = await Expense.find().populate('categoryId').sort({ date: -1 });
+        const expenses = await Expense.find({ owner: ownerId }).populate('categoryId').sort({ date: -1 });
 
         expenseSheet.columns = [
             { header: 'Date', key: 'date', width: 15 },
@@ -1374,8 +1421,9 @@ router.get('/wallets', async (req, res) => {
             return res.render('offline', { layout: false });
         }
 
+        const ownerId = req.user._id;
         // 1. Fetch Wallets
-        const wallets = await Wallet.find().sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: ownerId }).sort({ name: 1 });
 
         // 2. Calculate Total Balance
         const totalBalance = wallets.reduce((acc, w) => acc + w.balance, 0);
@@ -1385,10 +1433,10 @@ router.get('/wallets', async (req, res) => {
         const limit = 20;
 
         const [expenses, income, payments, transfers] = await Promise.all([
-            Expense.find().sort({ date: -1 }).limit(limit).populate('wallet').lean(),
-            Income.find().sort({ date: -1 }).limit(limit).populate('wallet').lean(),
-            Payment.find().sort({ date: -1 }).limit(limit).populate('wallet').populate('person').lean(),
-            Transfer.find().sort({ date: -1 }).limit(limit).populate('fromWallet').populate('toWallet').lean()
+            Expense.find({ owner: ownerId }).sort({ date: -1 }).limit(limit).populate('wallet').lean(),
+            Income.find({ owner: ownerId }).sort({ date: -1 }).limit(limit).populate('wallet').lean(),
+            Payment.find({ owner: ownerId }).sort({ date: -1 }).limit(limit).populate('wallet').populate('person').lean(),
+            Transfer.find({ owner: ownerId }).sort({ date: -1 }).limit(limit).populate('fromWallet').populate('toWallet').lean()
         ]);
 
         let recentActivity = [
@@ -1409,7 +1457,7 @@ router.get('/wallets', async (req, res) => {
         // Most Used Wallet (This Month) - Count transactions
         // We'll do a quick aggregation on Expenses (usually most frequent) + Income
         const expenseCount = await Expense.aggregate([
-            { $match: { date: { $gte: startOfMonth } } },
+            { $match: { owner: new mongoose.Types.ObjectId(ownerId), date: { $gte: startOfMonth } } },
             { $group: { _id: "$wallet", count: { $sum: 1 } } }
         ]);
 
@@ -1465,7 +1513,8 @@ router.get('/wallets/add', (req, res) => {
 
 router.post('/wallets/add', async (req, res) => {
     try {
-        await financeHelpers.createWallet(req.body);
+        const data = { ...req.body, owner: req.user._id };
+        await financeHelpers.createWallet(data);
         res.redirect('/admin/finance/wallets?success=' + encodeURIComponent('Wallet created successfully!'));
     } catch (err) {
         console.error('Error creating wallet:', err);
@@ -1476,7 +1525,7 @@ router.post('/wallets/add', async (req, res) => {
 router.get('/wallets/edit/:id', async (req, res) => {
     try {
         if (require('mongoose').connection.readyState !== 1) return res.render('offline', { layout: false });
-        const wallet = await Wallet.findById(req.params.id);
+        const wallet = await Wallet.findOne({ _id: req.params.id, owner: req.user._id });
         if (!wallet) {
             return res.redirect('/admin/finance/wallets?error=' + encodeURIComponent('Wallet not found.'));
         }
@@ -1489,7 +1538,7 @@ router.get('/wallets/edit/:id', async (req, res) => {
 
 router.post('/wallets/edit/:id', async (req, res) => {
     try {
-        await financeHelpers.updateWallet(req.params.id, req.body);
+        await financeHelpers.updateWallet(req.params.id, req.body, req.user._id);
         res.redirect('/admin/finance/wallets?success=' + encodeURIComponent('Wallet updated successfully!'));
     } catch (err) {
         console.error('Error updating wallet:', err);
@@ -1499,7 +1548,7 @@ router.post('/wallets/edit/:id', async (req, res) => {
 
 router.get('/wallets/delete/:id', async (req, res) => {
     try {
-        await financeHelpers.deleteWallet(req.params.id);
+        await financeHelpers.deleteWallet(req.params.id, req.user._id);
         res.redirect('/admin/finance/wallets?success=' + encodeURIComponent('Wallet deleted successfully!'));
     } catch (err) {
         console.error('Error deleting wallet:', err);
@@ -1509,7 +1558,7 @@ router.get('/wallets/delete/:id', async (req, res) => {
 
 router.get('/wallets/transfer', async (req, res) => {
     try {
-        const wallets = await Wallet.find().sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
         res.render('admin/finance/wallets/transfer', {
             title: 'Transfer Funds',
             wallets,
@@ -1534,7 +1583,7 @@ router.post('/wallets/transfer', async (req, res) => {
             return res.redirect('/admin/finance/wallets/transfer?error=' + encodeURIComponent('Invalid amount.'));
         }
 
-        await financeHelpers.transferFunds(req.body);
+        await financeHelpers.transferFunds(req.body, req.user._id);
         res.redirect('/admin/finance/wallets?success=' + encodeURIComponent('Transfer successful!'));
     } catch (err) {
         console.error('Error processing transfer:', err);
@@ -1544,16 +1593,16 @@ router.post('/wallets/transfer', async (req, res) => {
 
 router.get('/wallets/:id', async (req, res) => {
     try {
-        const wallet = await Wallet.findById(req.params.id);
+        const wallet = await Wallet.findOne({ _id: req.params.id, owner: req.user._id });
         if (!wallet) return res.redirect('/admin/finance/wallets');
 
         // Fetch all related transactions
-        const expenses = await Expense.find({ wallet: wallet._id }).sort({ date: -1 }).lean();
-        const income = await Income.find({ wallet: wallet._id }).sort({ date: -1 }).lean();
-        const sentPayments = await Payment.find({ wallet: wallet._id, type: 'send', status: 'Completed' }).populate('person').sort({ date: -1 }).lean();
-        const receivedPayments = await Payment.find({ wallet: wallet._id, type: 'receive', status: 'Completed' }).populate('person').sort({ date: -1 }).lean();
-        const sentTransfers = await Transfer.find({ fromWallet: wallet._id }).populate('toWallet').sort({ date: -1 }).lean();
-        const receivedTransfers = await Transfer.find({ toWallet: wallet._id }).populate('fromWallet').sort({ date: -1 }).lean();
+        const expenses = await Expense.find({ owner: req.user._id, wallet: wallet._id }).sort({ date: -1 }).lean();
+        const income = await Income.find({ owner: req.user._id, wallet: wallet._id }).sort({ date: -1 }).lean();
+        const sentPayments = await Payment.find({ owner: req.user._id, wallet: wallet._id, type: 'send', status: 'Completed' }).populate('person').sort({ date: -1 }).lean();
+        const receivedPayments = await Payment.find({ owner: req.user._id, wallet: wallet._id, type: 'receive', status: 'Completed' }).populate('person').sort({ date: -1 }).lean();
+        const sentTransfers = await Transfer.find({ owner: req.user._id, fromWallet: wallet._id }).populate('toWallet').sort({ date: -1 }).lean();
+        const receivedTransfers = await Transfer.find({ owner: req.user._id, toWallet: wallet._id }).populate('fromWallet').sort({ date: -1 }).lean();
 
         // Combine into a single timeline
         const history = [
@@ -1624,8 +1673,9 @@ router.get('/categories', async (req, res) => {
             }
         }
 
+        const ownerId = req.user._id;
         console.log('Cache Miss: Categories');
-        const categories = await Category.find().sort({ type: 1, name: 1 });
+        const categories = await Category.find({ owner: ownerId }).sort({ type: 1, name: 1 });
 
         // Set Cache (1 hour)
         if (redisClient.isReady) {
@@ -1653,7 +1703,8 @@ router.get('/categories/add', (req, res) => {
 
 router.post('/categories/add', async (req, res) => {
     try {
-        await financeHelpers.createCategory(req.body);
+        const data = { ...req.body, owner: req.user._id };
+        await financeHelpers.createCategory(data);
         res.redirect('/admin/finance/categories');
     } catch (err) {
         console.error(err);
@@ -1663,7 +1714,8 @@ router.post('/categories/add', async (req, res) => {
 
 router.get('/categories/edit/:id', async (req, res) => {
     try {
-        const category = await Category.findById(req.params.id);
+        const category = await Category.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!category) return res.redirect('/admin/finance/categories');
         res.render('admin/finance/categories/form', { title: 'Edit Category', category, layout: 'layouts/adminLayout' });
     } catch (err) {
         console.error(err);
@@ -1673,7 +1725,7 @@ router.get('/categories/edit/:id', async (req, res) => {
 
 router.post('/categories/edit/:id', async (req, res) => {
     try {
-        await financeHelpers.updateCategory(req.params.id, req.body);
+        await financeHelpers.updateCategory(req.params.id, req.body, req.user._id);
         res.redirect('/admin/finance/categories');
     } catch (err) {
         console.error(err);
@@ -1683,7 +1735,7 @@ router.post('/categories/edit/:id', async (req, res) => {
 
 router.post('/categories/delete/:id', async (req, res) => {
     try {
-        await financeHelpers.deleteCategory(req.params.id);
+        await financeHelpers.deleteCategory(req.params.id, req.user._id);
         res.redirect('/admin/finance/categories');
     } catch (err) {
         console.error(err);
@@ -1694,7 +1746,8 @@ router.post('/categories/delete/:id', async (req, res) => {
 // --- Payment Management ---
 router.get('/payments', async (req, res) => {
     try {
-        const payments = await Payment.find().populate('person').populate('wallet').sort({ date: -1 });
+        const ownerId = req.user._id;
+        const payments = await Payment.find({ owner: ownerId }).populate('person').populate('wallet').sort({ date: -1 });
 
         // --- Calculate Dashboard Metrics ---
         let totalSent = 0;
@@ -1805,8 +1858,8 @@ router.get('/payments', async (req, res) => {
 
 router.get('/payments/add', async (req, res) => {
     try {
-        const people = await Person.find().sort({ name: 1 });
-        const wallets = await Wallet.find().sort({ name: 1 });
+        const people = await Person.find({ owner: req.user._id }).sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
         res.render('admin/finance/payments/form', {
             title: 'Add Payment',
             payment: {},
@@ -1822,7 +1875,8 @@ router.get('/payments/add', async (req, res) => {
 
 router.post('/payments/add', async (req, res) => {
     try {
-        await financeHelpers.createPayment(req.body);
+        const data = { ...req.body, owner: req.user._id };
+        await financeHelpers.createPayment(data);
         res.redirect('/admin/finance/payments');
     } catch (err) {
         console.error(err);
@@ -1832,9 +1886,10 @@ router.post('/payments/add', async (req, res) => {
 
 router.get('/payments/edit/:id', async (req, res) => {
     try {
-        const payment = await Payment.findById(req.params.id);
-        const people = await Person.find().sort({ name: 1 });
-        const wallets = await Wallet.find().sort({ name: 1 });
+        const payment = await Payment.findOne({ _id: req.params.id, owner: req.user._id });
+        if (!payment) return res.redirect('/admin/finance/payments');
+        const people = await Person.find({ owner: req.user._id }).sort({ name: 1 });
+        const wallets = await Wallet.find({ owner: req.user._id }).sort({ name: 1 });
         res.render('admin/finance/payments/form', {
             title: 'Edit Payment',
             payment,
@@ -1850,7 +1905,7 @@ router.get('/payments/edit/:id', async (req, res) => {
 
 router.post('/payments/edit/:id', async (req, res) => {
     try {
-        await financeHelpers.updatePayment(req.params.id, req.body);
+        await financeHelpers.updatePayment(req.params.id, req.body, req.user._id);
         res.redirect('/admin/finance/payments');
     } catch (err) {
         console.error(err);
@@ -1860,7 +1915,7 @@ router.post('/payments/edit/:id', async (req, res) => {
 
 router.get('/payments/delete/:id', async (req, res) => {
     try {
-        await financeHelpers.deletePayment(req.params.id);
+        await financeHelpers.deletePayment(req.params.id, req.user._id);
         res.redirect('/admin/finance/payments');
     } catch (err) {
         console.error(err);

@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const transferSchema = new mongoose.Schema({
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     fromWallet: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Wallet',
