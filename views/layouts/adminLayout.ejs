@@ -6,6 +6,8 @@
     <title><%= title %> | Admin Panel</title>
     <script src="/js/tailwindcss.js"></script>
     <script src="/js/chart.js"></script>
+    <script src="/js/dashboard-cache.js"></script>
+    <script src="/js/ui.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1e3a8a">
@@ -23,6 +25,21 @@
         .delay-100 { animation-delay: 0.1s; }
         .delay-200 { animation-delay: 0.2s; }
         .delay-300 { animation-delay: 0.3s; }
+
+        /* User Dropdown */
+        .user-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            width: 240px;
+            background: white;
+            border: 1px solid #edf2f7;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+        }
+        .user-dropdown.active { display: block; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-900">
@@ -198,7 +215,6 @@
                         </a>
                     </li>
                 </ul>
-                </ul>
             </nav>
             <div class="px-4 pb-4">
                 <button onclick="downloadForOffline()" class="w-full flex items-center justify-center p-3 rounded-xl bg-gray-800 text-white hover:bg-gray-900 transition-all shadow-sm hover:shadow-md text-sm font-medium group">
@@ -243,6 +259,53 @@
                             <div id="notification-list" class="max-h-96 overflow-y-auto custom-scrollbar">
                                 <div class="p-4 text-center text-gray-400 text-sm">Loading...</div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button id="user-menu-btn" class="flex items-center space-x-3 p-1.5 rounded-xl hover:bg-gray-100 transition-all focus:outline-none">
+                            <div class="hidden md:block text-right">
+                                <p class="text-sm font-bold text-gray-800 leading-none"><%= user.username %></p>
+                                <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mt-1"><%= user.role %></p>
+                            </div>
+                            <div class="relative">
+                                <% if (user.imageUrl) { %>
+                                    <img src="<%= user.imageUrl %>" class="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm ring-2 ring-gray-50">
+                                <% } else { %>
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm ring-2 ring-gray-50">
+                                        <span class="text-sm font-bold uppercase"><%= user.username.charAt(0) %></span>
+                                    </div>
+                                <% } %>
+                                <span class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+                            </div>
+                            <i class="fas fa-chevron-down text-xs text-gray-400 ml-1 hidden md:block"></i>
+                        </button>
+
+                        <!-- User Dropdown Menu -->
+                        <div id="user-dropdown-menu" class="user-dropdown mt-2 p-2 border-gray-100 animate-fade-in">
+                            <div class="p-3 border-b border-gray-50 mb-2">
+                                <p class="text-sm font-bold text-gray-900"><%= user.username %></p>
+                                <p class="text-xs text-gray-500 truncate mt-0.5"><%= user.email || 'No email set' %></p>
+                            </div>
+                            <ul class="space-y-1">
+                                <li>
+                                    <a href="/admin/config" class="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                                        <i class="fas fa-user-circle w-5 text-gray-400"></i> My Settings
+                                    </a>
+                                </li>
+                                <% if(user.role === 'admin') { %>
+                                <li>
+                                    <a href="/admin/users" class="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                                        <i class="fas fa-users-cog w-5 text-gray-400"></i> Manage Team
+                                    </a>
+                                </li>
+                                <% } %>
+                                <div class="my-2 border-t border-gray-50"></div>
+                                <li>
+                                    <a href="/auth/logout" class="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all font-medium">
+                                        <i class="fas fa-sign-out-alt w-5"></i> Logout
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -406,6 +469,25 @@
         }
         
         backdrop.addEventListener('click', closeSidebar);
+
+        // User dropdown toggle
+        const userMenuBtn = document.getElementById('user-menu-btn');
+        const userDropdown = document.getElementById('user-dropdown-menu');
+
+        if(userMenuBtn && userDropdown) {
+            userMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+
+            document.addEventListener('click', () => {
+                userDropdown.classList.remove('active');
+            });
+
+            userDropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

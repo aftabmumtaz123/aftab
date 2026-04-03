@@ -54,8 +54,14 @@
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm mr-3">
-                                        <%= u.username.charAt(0).toUpperCase() %>
+                                    <div class="mr-3">
+                                        <% if (u.imageUrl) { %>
+                                            <img src="<%= u.imageUrl %>" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm">
+                                        <% } else { %>
+                                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                                                <%= u.username.charAt(0).toUpperCase() %>
+                                            </div>
+                                        <% } %>
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900 text-sm"><%= u.username %></p>

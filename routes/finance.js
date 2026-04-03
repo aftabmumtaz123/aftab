@@ -15,6 +15,7 @@ const puppeteer = require('puppeteer');
 const ExcelJS = require('exceljs');
 const ejs = require('ejs');
 const path = require('path');
+const upload = require('../middleware/uploadMiddleware');
 
 // Middleware to check auth
 router.use(requireAuth);
@@ -532,9 +533,10 @@ router.get('/people/add', (req, res) => {
     res.render('admin/finance/people/form', { title: 'Add Person', person: {}, layout: 'layouts/adminLayout' });
 });
 
-router.post('/people/add', async (req, res) => {
+router.post('/people/add', upload.single('imageUrl'), async (req, res) => {
     try {
         const data = { ...req.body, owner: req.user._id };
+        if (req.file) data.imageUrl = req.file.path;
         await financeHelpers.createPerson(data);
         res.redirect('/admin/finance/people');
     } catch (err) {
@@ -555,9 +557,11 @@ router.get('/people/edit/:id', async (req, res) => {
     }
 });
 
-router.post('/people/edit/:id', async (req, res) => {
+router.post('/people/edit/:id', upload.single('imageUrl'), async (req, res) => {
     try {
-        await financeHelpers.updatePerson(req.params.id, req.body, req.user._id);
+        const data = { ...req.body };
+        if (req.file) data.imageUrl = req.file.path;
+        await financeHelpers.updatePerson(req.params.id, data, req.user._id);
         res.redirect('/admin/finance/people');
     } catch (err) {
         console.error(err);

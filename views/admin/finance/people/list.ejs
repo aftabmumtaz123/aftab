@@ -88,8 +88,8 @@
         <% dashboard.topDebtors.forEach(person => { %>
             <div class="flex-shrink-0 w-64 bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group border-l-4 border-l-green-500">
                 <div class="flex items-center mb-3">
-                    <% if (person.avatar) { %>
-                        <img src="<%= person.avatar %>" alt="<%= person.name %>" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-100">
+                    <% if (person.imageUrl) { %>
+                        <img src="<%= person.imageUrl %>" alt="<%= person.name %>" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-100">
                     <% } else { %>
                         <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mr-3 text-green-600 font-bold border-2 border-white shadow-sm">
                             <%= person.name.charAt(0).toUpperCase() %>
@@ -113,8 +113,8 @@
         <% dashboard.topCreditors.forEach(person => { %>
             <div class="flex-shrink-0 w-64 bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group border-l-4 border-l-red-500">
                 <div class="flex items-center mb-3">
-                    <% if (person.avatar) { %>
-                        <img src="<%= person.avatar %>" alt="<%= person.name %>" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-100">
+                    <% if (person.imageUrl) { %>
+                        <img src="<%= person.imageUrl %>" alt="<%= person.name %>" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-100">
                     <% } else { %>
                         <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mr-3 text-red-600 font-bold border-2 border-white shadow-sm">
                             <%= person.name.charAt(0).toUpperCase() %>
@@ -174,8 +174,8 @@
                     <!-- Left: Avatar & Info -->
                     <div class="flex items-center gap-4 w-full sm:w-auto">
                         <div class="relative">
-                            <% if (person.avatar) { %>
-                                <img src="<%= person.avatar %>" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm">
+                            <% if (person.imageUrl) { %>
+                                <img src="<%= person.imageUrl %>" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm">
                             <% } else { %>
                                 <div class="w-14 h-14 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-500 font-bold text-xl border-2 border-white shadow-sm">
                                     <%= person.name.charAt(0).toUpperCase() %>

@@ -79,14 +79,24 @@ router.get('/users/add', requireAdmin, (req, res) => {
     renderAdmin(res, 'admin/add-user', { title: 'Add User', path: '/users' });
 });
 
-router.post('/users/add', requireAdmin, async (req, res) => {
+router.post('/users/add', requireAdmin, upload.single('imageUrl'), async (req, res) => {
     try {
         const { username, password, email, phone, role } = req.body;
         const existing = await User.findOne({ username });
         if (existing) {
             return res.redirect('/admin/users/add?error=Username+already+exists');
         }
-        await User.create({ username, password, email: email || '', phone: phone || '', role: role || 'user' });
+        
+        const userData = { 
+            username, 
+            password, 
+            email: email || '', 
+            phone: phone || '', 
+            role: role || 'user',
+            imageUrl: req.file ? req.file.path : ''
+        };
+        
+        await User.create(userData);
         res.redirect('/admin/users');
     } catch (err) {
         console.error(err);
