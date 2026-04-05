@@ -11,7 +11,7 @@ const Transfer = require('../models/Transfer');
 const redisClient = require('../config/redis');
 const financeHelpers = require('../utils/financeHelpers');
 const { requireAuth } = require('../middleware/authMiddleware');
-const puppeteer = require('puppeteer');
+// const puppeteer = require('puppeteer'); // Temporarily commented out to fix crash
 const ExcelJS = require('exceljs');
 const ejs = require('ejs');
 const path = require('path');
@@ -1290,6 +1290,8 @@ router.get('/reports', async (req, res) => {
 });
 
 router.get('/reports/export/pdf', async (req, res) => {
+    res.status(503).send('PDF Export is temporarily unavailable. Please contact the administrator. (Puppeteer dependency issue)');
+    /*
     try {
         const ownerId = req.user._id;
         const summary = await getFinancialSummary(ownerId);
@@ -1327,6 +1329,7 @@ router.get('/reports/export/pdf', async (req, res) => {
         console.error('PDF Export Error:', err);
         res.status(500).json({ success: false, message: 'Failed to generate PDF' });
     }
+    */
 });
 
 router.get('/reports/export/excel', async (req, res) => {

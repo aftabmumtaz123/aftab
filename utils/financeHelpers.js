@@ -355,8 +355,12 @@ const financeHelpers = {
 
         // WhatsApp to Person (if phone exists)
         if (person && person.phone) {
-            console.log(`📲 Triggering standard creation WhatsApp to ${person.phone}...`);
-            await whatsappService.sendPaymentConfirmation(payment, person.phone, data.owner, personName);
+            try {
+                console.log(`📲 Triggering standard creation WhatsApp to ${person.phone}...`);
+                await whatsappService.sendPaymentConfirmation(payment, person.phone, data.owner, personName);
+            } catch (err) {
+                console.error('❌ WhatsApp Confirmation Error:', err.message);
+            }
         } else {
             console.log('⚠️ No phone number associated with person ID:', data.person);
         }
@@ -398,15 +402,19 @@ const financeHelpers = {
         // WhatsApp Notification check for updates
         const person = await Person.findOne({ _id: updatedPayment.person, owner: ownerId });
         if (person && person.phone) {
-            if (updatedPayment.status === 'Completed' && oldPayment.status !== 'Completed') {
-                console.log(`📲 Triggering Completed WhatsApp to ${person.phone}...`);
-                await whatsappService.sendPaymentConfirmation(updatedPayment, person.phone, ownerId, person.name);
-            } else if (updatedPayment.status === 'Partial' && oldPayment.status !== 'Partial') {
-                console.log(`📲 Triggering Partial WhatsApp to ${person.phone}...`);
-                await whatsappService.sendPaymentConfirmation(updatedPayment, person.phone, ownerId, person.name);
-            } else if (updatedPayment.status === 'Overdue' && oldPayment.status !== 'Overdue') {
-                console.log(`📲 Triggering Overdue WhatsApp to ${person.phone}...`);
-                await whatsappService.sendDueReminder(updatedPayment, person.phone, ownerId, person.name);
+            try {
+                if (updatedPayment.status === 'Completed' && oldPayment.status !== 'Completed') {
+                    console.log(`📲 Triggering Completed WhatsApp to ${person.phone}...`);
+                    await whatsappService.sendPaymentConfirmation(updatedPayment, person.phone, ownerId, person.name);
+                } else if (updatedPayment.status === 'Partial' && oldPayment.status !== 'Partial') {
+                    console.log(`📲 Triggering Partial WhatsApp to ${person.phone}...`);
+                    await whatsappService.sendPaymentConfirmation(updatedPayment, person.phone, ownerId, person.name);
+                } else if (updatedPayment.status === 'Overdue' && oldPayment.status !== 'Overdue') {
+                    console.log(`📲 Triggering Overdue WhatsApp to ${person.phone}...`);
+                    await whatsappService.sendDueReminder(updatedPayment, person.phone, ownerId, person.name);
+                }
+            } catch (err) {
+                console.error('❌ WhatsApp Update Error:', err.message);
             }
         }
 

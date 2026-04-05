@@ -32,8 +32,12 @@ const notificationService = {
                 subject,
                 html
             };
-            await transporter.sendMail(mailOptions);
-            console.log(`Email sent to ${to}`);
+            // Do not await to avoid blocking the main thread
+            transporter.sendMail(mailOptions).then(() => {
+                console.log(`Email sent to ${to}`);
+            }).catch(error => {
+                console.error('Error sending email:', error);
+            });
         } catch (error) {
             console.error('Error sending email:', error);
         }
@@ -71,15 +75,16 @@ const notificationService = {
             // 1. Save to DB
             const notification = await Notification.create(data);
 
-            // 2. Trigger Push (if applicable)
+            // 2. Trigger Push (if applicable) - Background
             const pushPayload = {
                 title: data.title,
                 body: data.message,
                 url: data.link || '/admin/dashboard',
                 icon: '/images/logo.png'
             };
-
-            await notificationService.sendPush(pushPayload, data.owner);
+            
+            // Fire and forget push notifications
+            notificationService.sendPush(pushPayload, data.owner);
 
             return notification;
         } catch (error) {
